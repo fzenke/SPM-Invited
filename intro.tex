@@ -1,0 +1,69 @@
+
+\subsection{Introduction}
+Biological neural networks have evolved over millions of years to rapidly process noisy, ambiguous, and unstructured input stimuli and respond with complex and coordinated behavioral patterns. Evolutionary pressure ensured that biological networks exhibit a high degree of resiliency, energy efficiency, and adaptability. In modern times, the unprecedented and rapidly accelerating rate of data production, together with the growing need to process this data in real time and on low-power mobile platforms sparked intense interest in computing architectures that can efficiently operate on continuous streams of unstructured data.
+
+The tight power budgets imposed on mobile platforms nowadays and the ambiguous, uncurated forms of data they process, are analoguous in many respects to the pressures that shaped biological neural networks. It is thus natural that biological neural networks should serve as inspiration for novel computing paradigms tasked with finding structure in raw data, and with navigating complex decision spaces. Biological brains serve as a tantalizing existence proof that problems that stump our most powerful computers are solvable with a power budget of just 12W, which is the average power consumption of an adult human brain~\HM{Can somebody double check}. It is far from clear, however, how our rapidly growing knowledge of the operation of single neurons and of networks of neurons in the brain should be translated into effective computing devices.
+
+There is a long research tradition concerned with drawing inspiration from the brain to design various types of neural networks. One of the most impressive culminations of this long effort are modern deep \glspl{ann}. Deep \glspl{ann} are mathematical constructs that are loosely inspired by the principles of operation of biological neural networks. Their immense success in domains ranging from machine translation, to computer vision, to automatic speech recognition can be attributed to two key properties: superior representational power, and learnability. 
+
+Deep \glspl{ann} use real-valued distributed representations where information is encoded in the the co-activation of many neurons; and their input-output transformations are almost always differentiable, allowing them to be trained using gradient descent methods. While biological neural networks use distributed representations, these representations are based on discrete binary events or spikes. Unlike ANNs that often do not have an explicit representation of time, biological networks are dynamical system that continuously evolve in time and which use the temporal structure of their spike-based activity patterns to encode and process information. 
+
+\HM{Segue into highlighting how the differences between ANNs and SNNs mentioned above leads to greatly improved power efficiency, richer temporal representations}
+
+
+% Why spike based-learning?
+% Key advantages and characteristics of biological neural network
+Biological organisms use neural networks for computation.
+Unlike our von Neumann architectures, this biological wetware is
+massively parallel, fault tolerant and energy efficient. Since these properties
+are also desirable from an engineering point of view, the computational
+principles of biological have been subject of intense study over the years.
+
+Despite the fact that artificial neural networks draw their motivation from neurobiology,
+the networks used in modern deep learning applications are comparably power
+hungry and differ in several important points from their
+biological counterparts.
+These differences concern both their architecture and they way how these networks learn or
+are trained.
+
+% \subsection{Architectural differences}
+One key architectural difference is the fact that biological neurons do not
+constantly transmit their outputs to the neurons they are connected to, but
+rather use singular events in time, also called action potentials, or
+``spikes'', to communicate with each other. A typical spike lasts on the order
+of $\approx1\mathrm{ms}$ and will cause the addition or removal of a small charge
+on the receiving neuron's membrane capacitance. The receiving neuron uses its
+membrane capacitance to perform a temporal integration of spikes
+from all its upstream partners. Finally, when the
+receiving neuron's membrane voltage exceeds a certain threshold, it
+generates a spike itself after which its membrane voltage is reset.
+% TODO make a nice simple figure for this.
+
+Presumably there are several reasons for nature to rely on such spiking dynamics. First,
+binary signal transmission is more robust to noise which allows biological
+neurons to reliably and quickly signal over large distances. Modern von Neumann
+architectures use digital signals for the same reasons. Second, using short pulses in time neurobiology maximizes its bandwidth which allows for fast processing (REF Simon Thorpe nature paper maybe, cite Attwell).
+Finally, by only sending a few spikes instead of using constant charge currents neurons minimize their power consumption.
+
+% Learning/training differences
+% transition to 
+% "Requirements for spike-based learning"
+% \subsection{Differences in  learning/training}
+Another fundamental difference between artificial and biological neural networks concerns they way they acquire their function. 
+Acquisition of function or learning can often be thought of as an optimization problem in which network parameters such as weights are tuned to minimize a given cost function.
+This also allows us to separate the concepts of cost functions from the actual algorithm that minimizes that loss.
+Most artificial neural networks are trained on a supervised loss function using gradient descent. In the vast majority of cases, gradient descent is implemented using a variant of back-propagation of error.
+Moreover, there typically exists a clear separation between a training and the deployment phase in which the neural network is used, for instance to perform inference on unknown data. 
+For biological neural networks, on the other hand, it is not clear which cost functions they optimize. 
+It seems likely, however, that our brains lack the machinery to perform backprop on a supervised loss functions. Learning in animals and humans is thought to proceed in large part via unsupervised and reinforcement learning (REF maybe Adam Marblestone's paper on cost functions).
+Moreover, given that many circuits of the brain remain plastic throughout life suggests that there is no clear distinction between a learning and deployment phase. Rather, real brains seem to be learning on-line and constantly. 
+Finally, our knowledge about the effective optimization procedure the brain uses remains rudimentary at best.
+How biological circuits optimize cost functions remains elusive. However, it is known that biological synapses are highly plastic. It is therefore possible that our brains use approximate variants of backprop or entirely different algorithms to perform optimization.
+
+% currently the best understood cost functions are supervised,....
+% Now come to main problems with training \glspl{snn}  on supervised cost functions
+To translate the brain's strengths to man-made circuits, it is therefore indispensable to understand the underlying principles and algorithms that the biological wetware uses.
+One major impediment to this endeavor is that suitable algorithms to instantiate \glspl{snn} with a specific function in-silico are missing. 
+The main reason for this is rooted in the fact that gradients vanish in most spiking neural network models due to the binary spiking nature. 
+In this article we review recent advances that overcome this problem by introducing surrogate gradients.
+Moreover, we discuss current challenges for the application and deployment of \glspl{snn}.
