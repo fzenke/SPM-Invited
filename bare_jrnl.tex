@@ -188,7 +188,7 @@ it allows us to directly transfer a body of knowledge on how to obtain gradients
 % Introduce LIF in differential form
 We begin by noting that a single \gls{lif} neuron, a standard neuron model which is widely used in computational neuroscience, can be interpreted as a simple \gls{rnn}. 
 A \gls{lif} neuron can be formally be described in differential form as
-\begin{equation}
+\begin{equation}\label{eq:lif}
     \tau_\mathrm{mem} \frac{dU}{dt} = -U + RI
 \end{equation}
 where $U(t)$ is the membrane voltage, which describes the state of the neuron, $\tau_\mathrm{mem}$ is the membrane time constant, $R$ is the input resistance, and $I(t)$ is the input current.
@@ -200,7 +200,7 @@ $$S_j(t)=\sum_k \delta(t-t_j^k) \quad .$$
 This will become important later.
 
 Synaptic currents have temporal dynamics themselves. A reasonable first approximation is to model their time course as an exponential current following each presynaptic spike. Moreover, synaptic currents sum linearly, thus we can write:
-\begin{equation}
+\begin{equation}\label{eq:syn}
     \frac{dI}{dt}= -\frac{I(t)}{\tau_\mathrm{syn}} + \sum_j W_j S_j(t)
 \end{equation}
 where the sum runs over all presynaptic neurons $j$.
@@ -240,20 +240,20 @@ Generally speaking, this can be achieved in two different ways \cite{Williams_Zi
 1) The recurrent neural network is ``unrolled'' meaning that a graph is created by cloning the network for each time step of the system (see figure \ref{fig:snn_compgraph}). This way, the temporal credit assignment problem can be solved by back propagating through the unrolled network. Computationally, this requires maintaining all the inputs and activations for each time step. Thus the space complexity this approach is $O(N T)$, where $T$ is the duration of the sequence, and $N$ is the number of neurons.
 2) The information for computing the errors is propagated forward.
 %\textbf{Use Williams and Zipser equations, and explain special case where the ODE has a solution = superspike}
-For a leaky I\&F neuron with first order dynamics, the neuron membrane potential can be expressed as the Euler discretization:
+For a leaky I\&F neuron with first order dynamics Eq. \ref{eq:lif}, the neuron membrane potential can be expressed as the Euler discretization:
 \[
-u_i[t+1] = (1-\beta) u_i[t] + \beta \sum_j w_j \sigma(u_j[t])
+  U_i[t+1] = (1-\beta) U_i[t] + \beta \sum_j w_{ij} \sigma(U_j[t])
 \]
-where $\beta = \frac{\Delta t}{\tau}$, and $\tau$ is the membrane time constant. The gradient of a cost function $\mathcal{L}[t] = \sum_i (u_i[t]-\hat{u_i}[t])^2$ with respect to weight $w_{ij}$ is then:
+where $\beta = \frac{\Delta t}{\tau_{mem}}$. For illustration purposes, we assume here the gradient of a cost function $\mathcal{L}[t] = \sum_i (u_i[t]-\hat{u_i}[t])^2$ with respect to weight $w_{ij}$:
 \[
-\Delta_{w_{ij}} \mathcal{L}[t+1] = \frac{\partial \mathcal{L}[t+1]}{\partial w_{ij}} = e_i[t+1] p_{ij}[t+1]
+\Delta_{w_{ij}} \mathcal{L}[t] = \frac{\partial \mathcal{L}[t]}{\partial w_{ij}} = e_i[t] p_{ij}[t]
 \]
-where $e_i[t] = u_i[t]-\hat{u_i}[t]$, and $p_{ij}[t] = \frac{\partial u_i[t]} {\partial w_{ij}}$.
+where $e_i[t] = U_i[t]-\hat{U_i}[t]$, and $p_{ij}[t] = \frac{\partial U_i[t]} {\partial w_{ij}}$.
 \[
- p_{ij}[t+1] = (1-\beta) p_{ij}[t] + \beta \sigma(u_i[t]) + \beta \sum_j w_{ij} \sigma'(u_j[t]) p_{ij}[t],
+ p_{ij}[t+1] = (1-\beta) p_{ij}[t] + \beta \sigma(U_i[t]) + \beta \sum_j w_{ij} \sigma'(U_j[t]) p_{ij}[t],
 \]  
 where $\sigma'$ is the gradient of the smooth (surrogate) activation function.
-Thus, computing the weight update $\Delta_{w_i} \mathcal{L}$ requires maintaining variables $p_{ij}$. The space complexity is $O(N^2)$, where $N$ is the number of neurons. In a single layer feed-forward architecture, the third term above vanishes and $p_{ij}$ does not depend on $j$. In this case, the space complexity becomes $O(N)$. 
+Thus, computing the weight update $\Delta_{w_{ij}} \mathcal{L}$ requires maintaining variables $p_{ij}$, resulting in a space complexity $O(N^2)$, where $N$ is the number of neurons. In a single layer feed-forward architecture, the third term above vanishes and $p_{ij}$ does not depend on $j$. In this case, the space complexity becomes $O(N)$. 
 \textbf{consider generalizing with convolutions and multiple layers. This is like superspike}
 
 Both solutions consist in transforming the temporal credit assignment problem to a spatial one and applying the solutions for spatial credit assignment.
