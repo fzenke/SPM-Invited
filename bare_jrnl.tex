@@ -204,9 +204,9 @@ The task of learning is to minimize this cost over the entire dataset.
   %
   {\bf check indices here}
   \begin{equation}\label{eq:bp_deep}
-      \frac{\mathrm{\partial}}{\mathrm{\partial} w^{l}_{ij}} L = \delta_{i}^{l}  y^{l-1}_j,\text{ where }\delta_{i}^{l} = \rho'\left(\sum_j w^{l}_{ij} y^{l}_j\right) \sum_k \delta_{k}^{l+1}w_{ki}^{l+1},
+    \frac{\mathrm{\partial}}{\mathrm{\partial} W^{l}_{ij}} L = \delta_{i}^{l}  S^{l}_j,\text{ where }\delta_{i}^{l} = \rho'\left( U_i^l \right) \sum_k \delta_{k}^{l+1}[t] W_{ki}^{l+1},
   \end{equation}
-    where the $\delta_{i}^N=e_i$, as in \refeq{eq:bp_shallow} and $y_{i}^0=x_i$.
+    where the $\delta_{i}^N=e_i$, as in Eq. \ref{eq:bp_shallow} and $y_{i}^0=x_i$.
   % 
   This update rule is ubiquitous in deep learning \cite{Rumelhart_etal88_paradist} and known as the gradient backpropagation algorithm.   
   Learning is typically carried out in forward passes (evaluation of the neural network activities) and backward passes (evaluation of $\delta$s).
@@ -559,7 +559,7 @@ How this problem is circumvented --- at least partially --- by using \gls{sg} is
 the topic of the next sections.
 
 
-\section{Credit Assignment}
+\section{Credit Assignment in Spiking Neural Networks}
 \label{sec:credit_assignment}
 
 \begin{comment}
@@ -593,16 +593,29 @@ In the following two sections, we describe solutions to the spatial and temporal
 
 \subsection{Temporal Credit Assignment (Emre)}
 \label{sec:temporal_credit_assignment}
-Some form of memory is required to solve the temporal credit assignment problem. 
+Some form of memory is required to solve the temporal credit assignment problem in RNNs. 
 Generally, this can be achieved in two different ways \cite{Williams_Zipser89_learalgo}:
-1) The recurrent neural network is ``unrolled'' meaning that a graph is created by cloning the network for each time step of the system (see figure \ref{fig:snn_compgraph}). This way, the temporal credit assignment problem can be solved by back propagating through the unrolled network. Computationally, this requires maintaining all the inputs and activations for each time step. Thus the space complexity this approach is $O(N T)$, where $T$ is the duration of the sequence, and $N$ is the number of neurons.
+1) The recurrent neural network is ``unrolled'' meaning that a graph is created by copying the network for each time step of the system (see figure \ref{fig:snn_compgraph}). The copy implies a sharing of the recurrent weights across the unrolled network. The network is equivalent to a deep network (with a depth equal to the number of timesteps) with shared weights, and standard backpropagation applies:
+%
+{\bf not 100\% sure, check}
+\begin{equation}\label{eq:bp_deep}
+  \frac{\mathrm{\partial}}{\mathrm{\partial} W^{(l,l)}_{ij}} L = \sum_{t=0}^T \delta_{i}^{l}[t]  y^{l-1}_j[t],
+    \text{ where }
+    \delta_{i}^{l} [t] = \rho'\left(\sum_j W^{(l,l)}_{ij} y^{l}_j [t] \right) \sum_k \delta_{k}^{l+1}W_{ki}^{(l,l+1)},
+\end{equation}
+%
+where $T$ is the duration of the sequence.
+This rule is known as backpropagation through time (BPTT), and the main difference is the sum over $t$.
+Using BPTT, the temporal credit assignment problem can be solved by back propagating through the unrolled network.
+The equivalence with standard backpropagation directly enables the use of autodifferentiation tools offered in model machine learning toolkits.
+Computationally, this requires maintaining all the inputs and activations for each time step. Thus the space complexity this approach is $O(N T)$, where $N$ is the number of neurons.
 2) The information for computing the errors is propagated forward.
-%\textbf{Use Williams and Zipser equations, and explain special case where the ODE has a solution = superspike}
+%Use Williams and Zipser equations, and explain special case where the ODE has a solution = superspike
 For a leaky I\&F neuron with first order dynamics, recall that the (smooth) neuron membrane potential can be expressed as the Euler discretization:
 \[
 \begin{split}
 U_i[t+1] & = \beta U_i[t] + I_i[t]\\
-I_i[t+1] & = \alpha I_i[t] + \sum_j W_j \sigma(U_j[t])
+  I_i[t+1] & = \alpha I_i[t] + \sum_j W_{ij} \sigma(U_j[t])
 \end{split}
 \]
 The gradient of a cost function $\mathcal{L}[t] = \sum_i (U_i[t]-\hat{U_i}[t])^2$ with respect to weight $W_{ij}$ is then:
@@ -620,14 +633,16 @@ where $\sigma'$ is the gradient of the smooth (surrogate) activation function.
 Thus, computing the weight update $\Delta_{w_i} \mathcal{L}$ requires maintaining variables $P_{ij}$. The space complexity is $O(N^2)$, where $N$ is the number of neurons. In a single layer feed-forward architecture, the third term above vanishes and $p_{ij}$ does not depend on $j$. In this case, the space complexity becomes $O(N)$. 
 %\textbf{consider generalizing with convolutions and multiple layers. This is like superspike}
 
-Both solutions consist in transforming the temporal credit assignment problem to a spatial one and applying the solutions for spatial credit assignment.
+Both solutions consist in transforming the temporal credit assignment problem to a spatial one and applying the solutions for spatial credit assignment. The backward approach is more efficient in terms of computation, but requires more memory. As memory is large in modern computers, this method is preferred. On the other hand, processing in dedicated neuromorphic hardware and, more generally, non-von Neumann computers may not have immediate access to such memory. In this case, the forward approach may be preferable. Furthermore, the forward approach is appealing from a biological point of view, since the learning rule is consistent with synaptic plasticity in the brain and ``three-factor'' rules.
 
 Learning on a non-local substrate means that the weight updates must be performed in a non-local fashion as well. Importantly, if training is performed epochwise (meaning weights are updated at the end of a sequence), a separate memory is required to accumulate the incremental weight updates. In the equation \ref{eq:integral_superspike}, this memory is implicitly assumed by the integral. Alternatively, the weights can be updated incrementally, meaning a weight update is performed at every time step, or when the instantaneous local error exceeds a threshold as in 
-\textbf{Error-triggered learning} \cite{Neftci18_datapowe}.
-\textbf{Describe the synchronization effect of incremental learning}.
+\textbf{Challenge: continuous dynamics= continuous weight change. Solution: Error-triggered learning} \cite{Neftci18_datapowe}.
 
 
-\subsection{Spatial Credit Assignment (Hesham)}
+\subsection{Spatial Credit Assignment (HM, EN, FZ)}
+\paragraph{back-prop-like (FZ?)}
+\paragraph{random feedback (direct feedback, feedback alignment, etc), (EN,FZ)}
+\paragraph{local error learning (HM)}
 \label{sec:spatial_credit_assignment}
 
 %\section{Outline}
