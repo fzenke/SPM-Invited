@@ -641,6 +641,20 @@ Learning on a non-local substrate means that the weight updates must be performe
 
 
 \subsection{Spatial Credit Assignment (HM, EN, FZ)}
+Using backpropagation to adjust deep layer weights ensures that the weight update  will reduce the output layer error for the current training example (if the learning rate is small enough). While this theoretical guarantee is highly desirable, it comes at the cost of more complex communication requirements (errors have to be communicated back through the network), and increased memory requirements as the neuron states need to be buffered until the errors become available so that both can be used to update the weights. We can break free from these requirements by either 1)approximating the error backpropagation step through cheaper means that incur less memory and communication overhead; 2)Formulating an alternative learning problem where the errors for each neuron are proximally generated, both in space and time.
+
+\paragraph{Learning using local errors} Multi-layer neural networks are hierarchical feature extractors. Through successive linear projections and point-wise non-linearities, neurons become tuned (respond most strongly) to particular spatio-temporal features in the input. While the best features are those that take into account the subsequent processing stages and which are learned to minimize the final error(as the features learned using backpropagation do), high-quality features can also be obtained by more local methods. The non-local component of the weight update equation (Eq.~\ref{eq:bp_deep}) is the error term $\delta_i^l[t]$. Instead of obtaining this error term through backpropagation, we require that it be generated using information local to the layer. One way of achieveing that is to define a layer-wise loss $E^l({\bf y}^l[t])$ and use this local loss to obtain the errors. In such a local learning setting, the weight update equation becomes:
+\begin{equation}\label{eq:bp_local}
+  \frac{\mathrm{\partial}}{\mathrm{\partial} W^{(l-1,l)}_{ij}} E^l = -\sum_{t=0}^T \delta_{i}^{l}[t]  y^{l-1}_j[t],
+    \text{ where }
+    \delta_{i}^{l} [t] = \rho'\left(\sum_j W^{(l-1,l)}_{ij} y^{l-1}_j [t] \right) \frac{dE^l({\bf y}^l[t])}{dy_i^l[t]}
+\end{equation}
+One convenient form for the local loss that works well in practice is:
+\begin{equation}
+E^l({\bf y}^l[t]) \equiv E({\bf W}^l_{r} {\bf y}^l[t],\hat{{\bf y}}^{l}[t])
+\end{equation}
+where $\hat{{\bf y}}^{l}[t]$ is a pseudo-target for layer $l$, ${\bf W}_l^{r}$ is a fixed random matrix that projects the activity vector at layer $l$ to a vector having the same dimension as the psuedo-target, and $E$ is a function measuring the discrepency between its two arguments. In essence, this formulation assumes an auxilliary random layer is attached to layer $l$ and the goal is to modify ${\bf W}^{(l-1,l)}$ so as to minimize the discrepency between the auxilliary random layer's output and the pseudo-target. The simplest choice for the pseudo-target is to use the top-layer target. This forces each layer to learn a set of features that are able to match the top-layer target after undergoing a fixed random linear projection. Each layer builds on the features learned by the layer below it, and we empirically observe that higher layers are able to learn higher-quality features that allow their random and fixed auxilliary layers to better match the target.
+
 \paragraph{back-prop-like (FZ?)}
 \paragraph{random feedback (direct feedback, feedback alignment, etc), (EN,FZ)}
 \paragraph{local error learning (HM)}
