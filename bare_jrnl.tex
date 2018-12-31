@@ -599,14 +599,15 @@ Generally, this can be achieved in two different ways \cite{Williams_Zipser89_le
 %
 {\bf not 100\% sure, check}
 \begin{equation}\label{eq:bp_deep}
-  \frac{\mathrm{\partial}}{\mathrm{\partial} W^{(l,l)}_{ij}} L = \sum_{t=0}^T \delta_{i}^{l}[t]  y^{l-1}_j[t],
-    \text{ where }
-    \delta_{i}^{l} [t] = \rho'\left(\sum_j W^{(l,l)}_{ij} y^{l}_j [t] \right) \sum_k \delta_{k}^{l+1}W_{ki}^{(l,l+1)},
+  \begin{split}
+    \frac{\mathrm{\partial}}{\mathrm{\partial} W^{(l,l)}_{ij}} L & = \sum_{t=0}^T \delta_{i}[t]^{l}[t]  S^{l-1}_j[t],\\
+      \text{ where } &
+      \delta_{i}^{l} [t] = \rho'\left( U_i^l [t] \right) \left( \sum_k \delta_{k}^{l+1}[t] W_{ki}^{(l,l+1)} + \sum_k \delta_{k}^{l}[t+1] W_{ki}^{(l,l)} \right),
+  \end{split}
 \end{equation}
 %
 where $T$ is the duration of the sequence.
-This rule is known as backpropagation through time (BPTT), and the main difference is the sum over $t$.
-Using BPTT, the temporal credit assignment problem can be solved by back propagating through the unrolled network.
+This rule is known as Backpropagation Through Time (BPTT), and the main difference is the sum over $t$. The computation of the errors required for the update are worked backwards in time, starting from the leaf nodes of the computational graph.
 The equivalence with standard backpropagation directly enables the use of autodifferentiation tools offered in model machine learning toolkits.
 Computationally, this requires maintaining all the inputs and activations for each time step. Thus the space complexity this approach is $O(N T)$, where $N$ is the number of neurons.
 2) The information for computing the errors is propagated forward.
