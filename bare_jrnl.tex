@@ -327,7 +327,7 @@ spike timing based coding.
 
 
 % Single spike time codes
-\subsection{Single spike timing based coding}
+\subsection{Gradients for single spike timing based codes}
 
 In an effort to optimize \glspl{snn} without potentially harmful noise
 injection and without reverting to a fully rate-based coding scheme, 
@@ -367,7 +367,7 @@ efficiency.
 % TODO @Hesham ?
 
 
-\section{Surrogate gradient approaches (Friedemann)}
+\section{Surrogate gradients (Friedemann)}
 
 To overcome some of the difficulties which are associated with 
 smoothed \glspl{snn}, we now introduce the notion of \gls{sg} methods.
@@ -593,9 +593,10 @@ In the following two sections, we describe solutions to the spatial and temporal
 
 \subsection{Temporal Credit Assignment (Emre)}
 \label{sec:temporal_credit_assignment}
-Some form of memory is required to solve the temporal credit assignment problem in RNNs. 
+Some form of memory is required to solve the temporal credit assignment problem
+in \glspl{rnn}. 
 Generally, this can be achieved in two different ways \cite{Williams_Zipser89_learalgo}:
-1) The recurrent neural network is ``unrolled'' meaning that a graph is created by copying the network for each time step of the system (see figure \ref{fig:snn_compgraph}). The copy implies a sharing of the recurrent weights across the unrolled network. The network is equivalent to a deep network (with a depth equal to the number of timesteps) with shared weights, and standard backpropagation applies:
+1)~The recurrent neural network is ``unrolled'' meaning that a graph is created by copying the network for each time step of the system (see figure \ref{fig:snn_compgraph}). The copy implies a sharing of the recurrent weights across the unrolled network. The network is equivalent to a deep network (with a depth equal to the number of timesteps) with shared weights, and standard backpropagation applies:
 %
 {\bf not 100\% sure, check}
 \begin{equation}\label{eq:bp_deep}
@@ -605,11 +606,11 @@ Generally, this can be achieved in two different ways \cite{Williams_Zipser89_le
 \end{equation}
 %
 where $T$ is the duration of the sequence.
-This rule is known as backpropagation through time (BPTT), and the main difference is the sum over $t$.
-Using BPTT, the temporal credit assignment problem can be solved by back propagating through the unrolled network.
+This rule is known as \gls{bptt}, and the main difference is the sum over $t$.
+Using \gls{bptt}, the temporal credit assignment problem can be solved by back propagating through the unrolled network.
 The equivalence with standard backpropagation directly enables the use of autodifferentiation tools offered in model machine learning toolkits.
 Computationally, this requires maintaining all the inputs and activations for each time step. Thus the space complexity this approach is $O(N T)$, where $N$ is the number of neurons.
-2) The information for computing the errors is propagated forward.
+2)~The information for computing the errors is propagated forward.
 %Use Williams and Zipser equations, and explain special case where the ODE has a solution = superspike
 For a leaky I\&F neuron with first order dynamics, recall that the (smooth) neuron membrane potential can be expressed as the Euler discretization:
 \[
