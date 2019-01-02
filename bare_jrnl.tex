@@ -27,7 +27,7 @@
 \usepackage[margin=1.25in]{geometry}
 \geometry{top=1in, left=1.25in, right=1.25in, bottom=1in}
 \usepackage{setspace}
-\doublespacing
+%\doublespacing
 \usepackage[numbers, square, comma, sort&compress]{natbib}
 
 
@@ -72,65 +72,55 @@ In so doing, it introduces surrogate gradient methods as a particularly flexible
 
 \section{Introduction}
 %%I think we should start with brain inspiration. The special issue is about brain-inspires computing. 
-\textbf{Add "brain inspiration here"}
+%\textbf{Add "brain inspiration here"}
 % TODO Add brain inspiration paragraph -- 20Watts etc ...  Signal processing
 % introducing
-A plethora of signal processing problems are concerned with real-time pattern
-recognition or noisy time series prediction.  To solve real-world problems with
-intrinsically nonlinear dynamics and an inherent history dependence, \glspl{rnn}
-often constitute a viable solution CITE. % CITE review However, to deploy
+A plethora of signal processing problems are concerned with real-time pattern recognition or noisy time series prediction.
+To solve real-world problems with intrinsically nonlinear dynamics and an inherent history dependence, \glspl{rnn} prove highly effective \cite{Goodfellow_etal16_deeplear}. 
+% CITE review However, to deploy
+%\textbf{motivation and brain inspiration}
+\glspl{rnn} are a class of stateful neural networks whose internal state evolves either in continuous time or through discrete time steps.
+\begin{comment} Emre: The Turing discussion is too detailed here. Make it briefer. \end{comment}
+\glspl{rnn} are universal computing architectures that are able to reproduce the behavior of an arbitrary Turing machine~\cite{Siegelmann_Sontag95}.
+The {\it program} implemented by an \gls{rnn}, however, is described in a fundamentally different way from a conventional Turing machine.
+Instead of a state transition table or a sequence of instructions, the behavior of \gls{rnn} is implicitly defined by the network weights and the equations governing the behavior of each neuron in the network.
+While this implicit definition is harder to parse and understand than conventional programs, it makes it possible to learn by tuning the network weights.
+Early on, Alan Turing recognized this potential of \glspl{rnn} in a prescient paper~\cite{Ince92} in which he described recurrent networks of logic gates where the connections between logic gates can be adapted to suit the task.
+Turing's paper was inspired by the most complex \glspl{rnn} known to us: biological brains.
+While \glspl{rnn} used for practical applications nowadays are different in many fundamental ways from biological networks, they both share the same general architecture and employ learning based on weight adjustment.
+Furthermore, a growing body of work is establishing formal equivalences between recurrent neural networks, and a class of spiking neural networks that can be efficiently emulated in dedicated neuromorphic hardware \cite{Zenke_Ganguli17_supesupe,Wozniak_etal18,Neftci18_datapowe,Bellec_etal18_longshor}. 
+It is thus natural to draw inspiration from biological networks when desigining \glspl{rnn}, as the former were evolution's highly-optimized answer to the problem of sensory signal processing. 
 
-\textbf{motivation and brain inspiration }\glspl{rnn} are a class of stateful neural networks whose internal state evolves either in continuous time or through discrete time steps. \glspl{rnn} are universal computing architectures that are able to reproduce the behavior of an arbitrary Turing machine~\cite{Siegelmann_Sontag95}. The {\it program} implemented by an \gls{rnn}, however, is described in a fundamentally different way from a conventional Turing machine. Instead of a state transition table or a sequence of instructions, the behavior of \gls{rnn} is implicitly defined by the network weights and the equations governing the behavior of each neuron in the network. While this implicit definition is harder to parse and understand than conventional programs, it makes it possible to realize an important ability: the ability to learn by tuning the network weights. Early on, Alan Turing recognized this potential of \glspl{rnn} in a prescient paper~\cite{Ince92} in which he described recurrent networks of logic gates where the connections between logic gates can be adapted to suit the task. Turing's paper was inspired by the most complex \glspl{rnn} known to us: biological brains. While \glspl{rnn} used for practical applications nowadays are different in many fundamental ways from biological networks, they both share the same general architecture and employ learning based on weight adjustment. It is thus natural to draw inspiration from biological networks when desigining \glspl{rnn}, as the former were evolution's highly-optimized answer to the problem of sensory signal processing. 
-
-With \glspl{rnn} two key challenges need to be addressed.  First, before an \gls{rnn}
-can be used to predict outcomes on new data, it needs to be trained.  Training
-is the optimization procedure in which the the parameters or weights of the
-\gls{rnn} are adjusted to approximate a specific function that the \gls{rnn} is
-to perform.  Training \glspl{rnn} can be impeded by a variety of factors common
-for real world applications, e.g.\ noise and non-stationary of the data. 
+With \glspl{rnn}, two key challenges need to be addressed. 
+First, before an \gls{rnn} can be used to predict outcomes on new data, it needs to be trained.
+Training is the optimization procedure in which the the parameters or weights of the \gls{rnn} are adjusted to approximate a specific function that the \gls{rnn} is to perform.
+Training \glspl{rnn} can be impeded by a variety of factors common for real world applications, e.g.\ noise and non-stationary of the data. 
 % Overcoming these limitations is an active field of research, many of which
 % have been reviewed in detail elsewhere CITE. % CITE find suitable review
-Second, as models grow larger and make their way into embedded and automotive
-applications, their power efficiency is of increasing importance
-\cite{boahen_neuromorphs_2017}.  To tackle the latter problem, simplified neural
-network applications have been devised which are amenable to be run natively on
-dedicated hardware, such as neuromorphic hardware and neural network
-accelerators.  For instance, one common approach are binary activation neural
-network implementations which can dispense with energetically costly
-floating-point multiplications. % CITE paper on binary embedded nets \Glspl{snn}
-These form a special subset of \glspl{rnn} with a binary activation functions and
-constitute an area of active study both due to their potential for power
-efficient computation and more fundamentally because \glspl{snn} are the
-dominant network model employed by the brain.
+Second, as models grow larger and make their way into embedded and automotive applications, their power efficiency is of increasing importance \cite{boahen_neuromorphs_2017}. 
+To tackle the latter problem, simplified neural network applications have been devised which are amenable to be run natively on dedicated hardware, such as neuromorphic hardware and neural network accelerators.  
+For instance, one common approach are binary activation neural network implementations which can dispense with energetically costly floating-point multiplications. % CITE paper on binary embedded nets \Glspl{snn}
+These form a special subset of \glspl{rnn} with a binary activation functions and constitute an area of active study both due to their potential for power
+efficient computation and more fundamentally because \glspl{snn} are the dominant network model employed by the brain.
 
-A body of work has focused on training spiking neural networks without
-hidden units \cite{ponulak_supervised_2009, Gutig_Sompolinsky06_tempneur,
-florian_chronotron:_2012, mohemmed_span:_2012, memmesheimer_learning_2014,
-Anwani_Rajendran15_normappr},
-\emph{i.e.}\ units which are neither directly connected to the input nor the output of
-the network.  
-Properly training hidden units is necessary to solve a majority of complex, real-world problems. Their training however requires efficient solutions to the spatial and temporal credit assignment problems, and creates a set of specific challenges, which need to be tackled.  In this article we focus on these
-challenges and describe possible remedies by specifically considering the
-problem of supervised learning in \glspl{snn}.
+A body of work has focused on training spiking neural networks without hidden units \cite{ponulak_supervised_2009, Gutig_Sompolinsky06_tempneur,
+florian_chronotron:_2012, mohemmed_span:_2012, memmesheimer_learning_2014, Anwani_Rajendran15_normappr}, \emph{i.e.}\ units which are neither directly connected to the input nor the output of the network.  
+Properly training hidden units is necessary to solve a majority of complex, real-world problems.
+Their training however requires efficient solutions to the spatial and temporal credit assignment problems, and creates a set of specific challenges, which need to be tackled.  
+In this article we focus on these challenges and describe possible remedies by specifically considering the problem of supervised learning in \glspl{snn}.
 
-The two key challenges which need to be addressed to successfully train
-\glspl{snn} are concerned with the spatial and the temporal credit assignment,
-i.e.\ how weights and parameters of hidden units need to be modified to improve
-the objective during training.  
-Conventional \glspl{rnn} are trained by minimizing a scalar objective
-or loss function. 
-In the majority of cases the underlying algorithm for this optimization is 
-gradient descent implemented as either \gls{bptt} or
+The two key challenges which need to be addressed to successfully train \glspl{snn} are concerned with the spatial and the temporal credit assignment,
+i.e.\ how weights and parameters of hidden units need to be modified to improve the objective during training.  
+Conventional \glspl{rnn} are trained by minimizing a scalar objective or loss function. 
+In the majority of cases the underlying algorithm for this optimization is gradient descent implemented as either \gls{bptt} or
 \gls{rtrl}.
-However, for gradient descent to be a well defined training procedure,
-\glspl{rnn} are typically designed to be continuously varying functions with
+However, for gradient descent to be a well defined training procedure, \glspl{rnn} are typically designed to be continuously varying functions with
 respect to their inputs. 
 The resulting smooth dynamics allow gradients to flow, % CITE
 an essential requirement for gradient-based optimization. 
 In spiking neural networks, however, activation functions are intrinsically
 binary. 
-Consequently, network outputs do not vary continuously with their inputs and 
-gradients are ill defined, 
+Consequently, network outputs do not vary continuously with their inputs and gradients are ill defined, 
 thus precluding the use of gradient-based training techniques. 
 % TODO Make figure if IF neuron with spike no spike difference
 
@@ -138,8 +128,7 @@ To overcome this limitation, several approaches have been devised to nevertheles
 learn useful representations in hidden layer neurons.
 The most common approaches can be coarsely classified into the following
 categories: 
-i) resorting to entirely unsupervised learning for the
-hidden units, 
+i) resorting to entirely unsupervised learning for the hidden units, 
 ii) translating conventionally trained ``rate-based'' neural networks to spiking
 neural networks,
 iii) smoothing the network model to be continuously differentiable, or 
@@ -147,42 +136,36 @@ iv) defining a surrogate gradient as a continuous relaxation of the real
 gradients.  
 Approaches pertaining to unsupervised learning and network translation have been
 reviewed extensively in \cite{tavanaei_deep_2018}. 
-In this tutorial we thus focus on the latter two supervised approaches which we will
-refer to in the following as the ``smoothed'' and \gls{sg} approach.
-The main difference between the two is that smoothed approaches entail
-modifications to the forward pass of the network dynamics by either dispensing
-with binary nonlinearities, by using specific coding schemes, 
-or by introducing stochasticity.  \Gls{sg} methods on the other hand
-leave the forward pass unchanged and act solely on the learning dynamics. 
-In the following, we briefly review existing literature on common ``smoothing''
-and \gls{sg} approaches
-before turning to an in depth discussion of how to build functional spiking neural 
-networks using these approaches. 
-
-\section{Types of \glspl{rnn}}
-{\bf Shouldn't we have a short section with a formal defintion first}
-Discrete-time RNN:
-\begin{align}
-x[n] = & \sigma(h[n]) \\
-h[n+1] = & f(h[n],{\bf W}x[n])
-\end{align}
-
-Continuous-time RNN
-\begin{align}
-x(t) = & \sigma(h(t)) \\
-\frac{dh}{dt} = &g(h(t),{\bf W}x(t))
-\end{align}
-
-Approximation of the continuous-time RNN by a discrete RNN
-
-\[
-\begin{split}
-x[t] = & \sigma(h[t]) \\
-h[t+1] = & h[t] + \Delta t g(h(t),{\bf W}x(t))
-\end{split}
-\]
-
-SNNs as binary RNNs (Friedman's part)
+In this tutorial we thus focus on the latter two supervised approaches which we will refer to in the following as the ``smoothed'' and \gls{sg} approach.
+The main difference between the two is that smoothed approaches entail modifications to the forward pass of the network dynamics by either dispensing
+with binary nonlinearities, by using specific coding schemes, or by introducing stochasticity.  
+\Gls{sg} methods on the other hand leave the forward pass unchanged and act solely on the learning dynamics. 
+In the following, we briefly review existing literature on common ``smoothing'' and \gls{sg} approaches before turning to an in depth discussion of how to build functional spiking neural networks using these approaches. 
+%
+%\section{Types of \glspl{rnn}}
+%{\bf Shouldn't we have a short section with a formal defintion first}
+%Discrete-time RNN:
+%\begin{align}
+%x[n] = & \sigma(h[n]) \\
+%h[n+1] = & f(h[n],{\bf W}x[n])
+%\end{align}
+%
+%Continuous-time RNN
+%\begin{align}
+%x(t) = & \sigma(h(t)) \\
+%\frac{dh}{dt} = &g(h(t),{\bf W}x(t))
+%\end{align}
+%
+%Approximation of the continuous-time RNN by a discrete RNN
+%
+%\[
+%\begin{split}
+%x[t] = & \sigma(h[t]) \\
+%h[t+1] = & h[t] + \Delta t g(h(t),{\bf W}x(t))
+%\end{split}
+%\]
+%
+%SNNs as binary RNNs (Friedman's part)
 
 \section{The \gls{rnn} learning problem (Hesham)}
 \glspl{rnn} can be used in a variety of scenarios ranging from time series prediction, to language translation, to automatic speech recognition. While there is a large variety of applications, the ingredients of the learning process are typically the same throughout. The first ingredient is a cost function, or a loss, which is minimized when the network's response corresponds to the desired behavior. In time series prediction for example, this loss could be the difference between the predicted and the true value. The second ingredient is a mechanism that updates the network's weights so as to minimize the loss. The simplest such mechanism is gradient descent. In neural networks, gradient descent can be implemented efficiently using the backpropagation algorithm.  There, errors propagate backwards from the point and time of error generation to earlier time points and earlier neurons. More precisely, consider two neurons, $u$ and $v$, connected through a weight $w$.
