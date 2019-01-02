@@ -529,11 +529,23 @@ Although non-locality in a model of computation can be seen as a serious shortco
 Thus, solving the ability to learn and process using local information extends well beyond the neuroscientists' agenda: it can enable information processing systems that approach the reliability and energy-efficiency of the brain.
 In the following two sections, we describe solutions to the spatial and temporal credit assignment problems in spiking neural networks.
 
-\subsection{Temporal Credit Assignment (Emre)}
+\subsection{Temporal Credit Assignment (Emre)}\label{sec:temporal_CA}
+
 \label{sec:temporal_credit_assignment}
 Some form of memory is required to solve the temporal credit assignment problem in \glspl{rnn}. 
-For illustration purposes, we assume a neural network with $L$ layers and a cost function $\mathcal{L}[t] = \sum_i (U_i[t]-\hat{U_i}[t])^2$, using the notation $\delta_i[t]^{(L)} = U_i[t]-\hat{U_i}[t]$. 
-Generally, this can be achieved in two different ways \cite{Williams_Zipser89_learalgo}:
+For illustration purposes, we assume a neural network with $L$ layers and a cost function $\mathcal{L}[t] = \sum_i (U_i[t]-\hat{U_i}[t])^2$, using the notation $\delta_i[t]^{L} = U_i^L[t]-\hat{U}_i^L[t]$. 
+%
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=.4\textwidth]{figures/diagram_bp}
+    \hspace{.1em}
+    \includegraphics[width=.4\textwidth]{figures/diagram_rtrl}
+  \caption{\emph{Backward and Forward Propagation of Gradients}. (Left) At time $t=2$ Errors are propagated backwards. To compute the parameter updates, the states of every neuron ($U^{(i)}$, $I^{(i)}$, and $S^{(i)}$, $i=0,1,2$) and the inputs ($x^{(0)}$) for each time step are stored. (Right) At time t=2, all the information from previous time steps has been propagated forward. The nature of this information is determined by the network structure and neuron dynamics. Note that the gradient step is backpropagated along the layers in time step $t=2$, but not $t<2$. This backward step is challenging in itself, and solutions to achieve this in a local fashion are discussed in Sec.~\ref{sec:spatial_CA}.
+}. 
+    \label{fig:backwrd_vs_forward_prop}
+\end{figure}
+%
+Generally, this can be achieved in two different ways \cite{Williams_Zipser89_learalgo} (Fig. \ref{fig:backwrd_vs_forward_prop}):
 \begin{enumerate}
 \item The ``backward'' method. The recurrent neural network is ``unrolled'' meaning that an auxiliary network is created by making copies of the network for each time step (see figure \ref{fig:snn_computational_graph}). 
 The notion of ``copy'' implies sharing parameters across the unrolled network.
@@ -596,7 +608,7 @@ Furthermore, the forward approach is appealing from a biological point of view, 
 %Alternatively, the weights can be updated incrementally, meaning a weight update is performed at every time step, or when the instantaneous local error exceeds a threshold as in 
 %\textbf{Challenge: continuous dynamics= continuous weight change. Solution: Error-triggered learning} \cite{Neftci18_datapowe}.
 
-\subsection{Spatial Credit Assignment (HM, EN, FZ)}
+\subsection{Spatial Credit Assignment (HM, EN, FZ)}\label{sec:spatial_CA}
 Using backpropagation to adjust deep layer weights ensures that the weight update  will reduce the output layer error for the current training example (if the learning rate is small enough).
 While this theoretical guarantee is highly desirable, it comes at the cost of more complex communication requirements (errors have to be communicated back through the network), and increased memory requirements as the neuron states need to be buffered until the errors become available so that both can be used to update the weights.
 We can break free from these requirements by either:
