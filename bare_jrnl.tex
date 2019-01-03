@@ -21,7 +21,7 @@
 % packages added by fzen
 \usepackage{graphicx}
 \usepackage{sidecap}
-\usepackage{color}
+\usepackage{xcolor}
 \usepackage{glossaries}
 \usepackage{comment}
 \usepackage[margin=1.25in]{geometry}
@@ -29,6 +29,10 @@
 \usepackage{setspace}
 %\doublespacing
 \usepackage[numbers, square, comma, sort&compress]{natbib}
+\usepackage{caption}
+\usepackage{mdframed}
+\DeclareCaptionType[fileext=box]{infobox}[Box]
+
 
 
 % Define acronymns
@@ -610,8 +614,8 @@ Furthermore, the forward approach is appealing from a biological point of view, 
 
 \subsection{Spatial Credit Assignment (HM, EN, FZ)}\label{sec:spatial_CA}
 Using backpropagation to adjust deep layer weights ensures that the weight update  will reduce the output layer error for the current training example (if the learning rate is small enough).
-While this theoretical guarantee is highly desirable, it comes at the cost of more complex communication requirements (errors have to be communicated back through the network), and increased memory requirements as the neuron states need to be buffered until the errors become available so that both can be used to update the weights.
-We can break free from these requirements by either:
+While this theoretical guarantee is highly desirable, it comes at the cost of more complex communication requirements, namely that errors have to be communicated back through the network, and increased memory requirements as the neuron states need to be buffered until the errors become available.
+These requirements can be relaxed by either:
 1)~Approximating the error backpropagation step through cheaper means that incur less memory, communication and computational overhead;
 2)~Formulating an alternative learning problem where the errors for each neuron are proximally generated, both in space and time.
 In the following, we describe examples of both type of solutions.
@@ -644,48 +648,53 @@ The simplest choice for the pseudo-target is to use the top-layer target.
 This forces each layer to learn a set of features that are able to match the top-layer target after undergoing a fixed random linear projection. Each layer builds on the features learned by the layer below it, and we empirically observe that higher layers are able to learn higher-quality features that allow their random and fixed auxiliary layers to better match the target.
 \label{sec:spatial_credit_assignment}
 
-\section*{Boxes}
-\subsection{Backpropagation}
-The task of learning is to minimize this cost over the entire dataset.
-This can be done efficiently using the gradient descent rule, which modifies the network parameters $\mathbf{w}$ in the direction opposite to the gradient:
-%
-\begin{equation}\label{eq:bp_shallow}
-  \begin{split}
-    w_{ij} \leftarrow w_{ij} - \eta \Delta w_{ij},  \text{where } \Delta w_{ij} = \frac{\mathrm{\partial}}{\mathrm{\partial} w_{ij}} L = \rho'\left(\sum_j w_{ij} x_j\right) e_i x_j,
-  \end{split}
-\end{equation}
-%
-and where $\eta$ is a small learning rate. 
-In deep networks, the weights of the hidden layer neurons are modified by backpropagating the errors from the prediction layer using the chain rule. 
-  Using superscripts $l=0,...,N$ to denote the layer ($0$ is input, $N$ is output):
-%
-{\bf check indices here}
-\begin{equation}\label{eq:bp_deep}
-  \frac{\mathrm{\partial}}{\mathrm{\partial} W^{l}_{ij}} L = \delta_{i}^{l}  S^{l}_j,\text{ where }\delta_{i}^{l} = \rho'\left( U_i^l \right) \sum_k \delta_{k}^{l+1}[t] W_{ki}^{l+1},
-\end{equation}
-  where the $\delta_{i}^N=e_i$, as in Eq. \ref{eq:bp_shallow} and $y_{i}^0=x_i$.
-% 
-This update rule is ubiquitous in deep learning \cite{Rumelhart_etal88_paradist} and known as the gradient backpropagation algorithm.   
-Learning is typically carried out in forward passes (evaluation of the neural network activities) and backward passes (evaluation of $\delta$s).
+\begin{infobox}
+  \begin{mdframed}[backgroundcolor=black!10]\small
+    \textbf{The Gradient Backpropagation Rule:} The task of learning is to minimize this cost over the entire dataset.
+    This can be done efficiently using the gradient descent rule, which modifies the network parameters $\mathbf{w}$ in the direction opposite to the gradient:
+    %
+    \begin{equation}\label{eq:bp_shallow}
+      \begin{split}
+        w_{ij} \leftarrow w_{ij} - \eta \Delta w_{ij},  \text{where } \Delta w_{ij} = \frac{\mathrm{\partial}}{\mathrm{\partial} w_{ij}} L = \rho'\left(\sum_j w_{ij} x_j\right) e_i x_j,
+      \end{split}
+    \end{equation}
+    %
+    and where $\eta$ is a small learning rate. 
+    In deep networks, the weights of the hidden layer neurons are modified by backpropagating the errors from the prediction layer using the chain rule. 
+      Using superscripts $l=0,...,N$ to denote the layer ($0$ is input, $N$ is output):
+    %
+    {\bf check indices here}
+    \begin{equation}\label{eq:bp_deep}
+      \frac{\mathrm{\partial}}{\mathrm{\partial} W^{l}_{ij}} L = \delta_{i}^{l}  S^{l}_j,\text{ where }\delta_{i}^{l} = \rho'\left( U_i^l \right) \sum_k \delta_{k}^{l+1}[t] W_{ki}^{l+1},
+    \end{equation}
+      where the $\delta_{i}^N=e_i$, as in Eq. \ref{eq:bp_shallow} and $y_{i}^0=x_i$.
+    % 
+    This update rule is ubiquitous in deep learning \cite{Rumelhart_etal88_paradist} and known as the gradient backpropagation algorithm.   
+    Learning is typically carried out in forward passes (evaluation of the neural network activities) and backward passes (evaluation of $\delta$s).
+  \end{mdframed}
+\end{infobox}
 
-\subsection{Non-local models of computation}
-Locality of computations is characterized by the set variables available to the physical processing elements, and depends on the computational substrate.
-Information necessary for learning can be non-local (it is available elsewhere), or global (it is shared among all processing elements).
+\begin{infobox}
+  \begin{mdframed}[backgroundcolor=black!10]\small
+    \textbf{Non-local Models of Computation:} Locality of computations is characterized by the set variables available to the physical processing elements, and depends on the computational substrate.
+    Information necessary for learning can be non-local (it is available elsewhere), or global (it is shared among all processing elements).
 
-To illustrate the concept of locality, we assume two neurons, $A$ and $B$, and would like Neuron $A$ to implement a function on domain $D$ defined as:
-\[ 
-  \begin{split}
-    D & = D_{loc} \cup D_{nloc},\\
-    \text{where } &D_{loc}=\{w_{BA},S^A(t), u_A(t)\}\text{ and }D_{nloc} = \{ S^B(t-T), u_{B}\}.
-  \end{split}
-\]
-Here, $S^B(t-T)$ refers to the output of neuron $B$ $T$ seconds ago, $U_A$, $U_B$ are the respective membrane potentials, and $w_{BA}$ is the synaptic weight from $B$ to $A$.  
-Variables under $D_{loc}$ are directly available to Neuron A and are thus local to it. 
-  
-On the other hand, variable $S^B(t-T)$ is temporally non-local and $u_{B}$ is spatially non-local to neuron $A$.
-Spatially global signals are often required for learning on practical tasks, and even commonplace in the brain (\emph{e.g.} neuromodulation).
-Non-local information can be transmitted through special structures, for example dedicated encoders and decoders for $U_B$ and a form of working memory for $S^B(t-T)$.
-An important challenge is to map relevant computations on functions of $D$ by minimizing the cost of communicating $D_{nloc}$.
+    To illustrate the concept of locality, we assume two neurons, $A$ and $B$, and would like Neuron $A$ to implement a function on domain $D$ defined as:
+    \[ 
+      \begin{split}
+        D & = D_{loc} \cup D_{nloc},\\
+        \text{where } &D_{loc}=\{w_{BA},S^A(t), u_A(t)\}\text{ and }D_{nloc} = \{ S^B(t-T), u_{B}\}.
+      \end{split}
+    \]
+    Here, $S^B(t-T)$ refers to the output of neuron $B$ $T$ seconds ago, $U_A$, $U_B$ are the respective membrane potentials, and $w_{BA}$ is the synaptic weight from $B$ to $A$.  
+    Variables under $D_{loc}$ are directly available to Neuron A and are thus local to it. 
+      
+    On the other hand, variable $S^B(t-T)$ is temporally non-local and $u_{B}$ is spatially non-local to neuron $A$.
+    Spatially global signals are often required for learning on practical tasks, and even commonplace in the brain (\emph{e.g.} neuromodulation).
+    Non-local information can be transmitted through special structures, for example dedicated encoders and decoders for $U_B$ and a form of working memory for $S^B(t-T)$.
+    An important challenge is to map relevant computations on functions of $D$ by minimizing the cost of communicating $D_{nloc}$.
+  \end{mdframed}
+\end{infobox}
 
 
 
