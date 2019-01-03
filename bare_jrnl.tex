@@ -121,7 +121,7 @@ In this article we focus on these challenges and describe possible remedies by s
 The two key challenges which need to be addressed to successfully train \glspl{snn} are concerned with the spatial and the temporal credit assignment,
 i.e.\ how weights and parameters of hidden units need to be modified to improve the objective during training.  
 Conventional \glspl{rnn} are trained by minimizing a scalar objective or loss function. 
-In the majority of cases the underlying algorithm for this optimization is gradient descent implemented as either \gls{bptt} or
+In the majority of cases the underlying algorithm for this optimization is gradient descent implemented as either \Gls{bptt} or
 \gls{rtrl}.
 However, for gradient descent to be a well defined training procedure, \glspl{rnn} are typically designed to be continuously varying functions with
 respect to their inputs. 
@@ -663,7 +663,6 @@ This forces each layer to learn a set of features that are able to match the top
     In deep networks, the weights of the hidden layer neurons are modified by backpropagating the errors from the prediction layer using the chain rule. 
       Using superscripts $l=0,...,N$ to denote the layer ($0$ is input, $N$ is output):
     %
-    {\bf check indices here}
     \begin{equation}\label{eq:bp_deep}
       \frac{\mathrm{\partial}}{\mathrm{\partial} W^{l}_{ij}} L = \delta_{i}^{l}  S^{l}_j,\text{ where }\delta_{i}^{l} = \rho'\left( U_i^l \right) \sum_k \delta_{k}^{l+1}[t] W_{ki}^{l+1},
     \end{equation}
