@@ -8,7 +8,7 @@
 %\usepackage{dsfont}
 \usetikzlibrary{shapes,arrows}
 \begin{document}
-\pagestyle{empty}
+%\pagestyle{empty}
 
 \definecolor{spikecolor}{RGB}{180,51,76}
 \definecolor{gradcolor}{RGB}{51,76,180}
@@ -21,26 +21,28 @@ corners, minimum height=2.2em]
 \tikzstyle{syn} = [block, fill=black!20 ]
 \tikzstyle{mem} = [block, fill=blue!20 ]
 \tikzstyle{spk} = [block, fill=spikecolor!20 ]
-\tikzstyle{gradedgev} = [draw, thick, gradcolor, transform canvas={xshift=-0.5em} ]
-\tikzstyle{gradedgeh} = [draw, thick, gradcolor, transform canvas={yshift=-0.5em}]
+\tikzstyle{gradedgev} = [draw, thick, gradcolor, transform canvas={xshift=-0.5em}, font=\scriptsize ]
+\tikzstyle{gradedgeh} = [draw, thick, gradcolor, transform canvas={yshift=-0.5em}, font=\scriptsize ]
 \tikzstyle{forwedge} = [draw, thick, black!50]
 
     
-\begin{tikzpicture}[node distance = 1.2cm, auto]
+\begin{tikzpicture}[node distance = 1.5cm, auto]
     \pgfmathsetmacro{\n}{2}  % sets number of units -1
     \pgfmathsetmacro{\nm}{1}  % set to \n -1
     \pgfmathsetmacro{\sep}{2.7}  
 
+
+
 	% Place nodes 
 	\foreach \t in {0,...,\n} {
     \node [sum] (x1\t) at (\sep*\t,0) {$x^{(0)}(\t)$};
-		\node [mem, above of=x1\t] (x2\t) {$U^{(1)}(\t)$};
-		\node [mem, above of=x2\t] (x3\t) {$U^{(2)}(\t)$};
+		\node [mem, above of=x1\t] (x2\t) {$y^{(1)}(\t)$};
+		\node [mem, above of=x2\t] (x3\t) {$y^{(2)}(\t)$};
 		\node [above of=x3\t] (downstream\t) {};
 	}
 
 
-  % Draw edges
+  % Draw vertical edges
 	\foreach \t in {0,...,\n} {
     	\path [->, forwedge] (x1\t) -- (x2\t)        ; % node[near start, right] {$W^{(0,1)}$};
     	\path [->, forwedge] (x2\t) -- (x3\t)        ; % node[pos=.5, right] {$W^{(1,2)}$};
@@ -49,16 +51,17 @@ corners, minimum height=2.2em]
 		% right] {$W^{(0,1)}$};
 	}
   %\path [<-, gradedgev] (x1\n) -- (x2\n)       node[midway, left] {$\delta^1$};
-  \path [<-, gradedgev] (x2\n) -- (x3\n)       node[midway, left] {\scriptsize $\delta^2(\n)$};
-  \path [->, gradedgev] (downstream\n) -- (x3\n) node[pos=.5, left] {\scriptsize $\delta^L(\n)$};;
+  \path [<-, gradedgev] (x2\n) -- (x3\n)       node[midway, left] { \scriptsize $\delta^2(\n)$};
+  \path [->, gradedgev] (downstream\n) -- (x3\n) node[pos=.5, left] { \scriptsize $\delta^L(\n)$};;
 
 	% Forward in time
 	\foreach \t in {0,...,\nm} {
 		\pgfmathtruncatemacro{\next}{\t + 1}
+		\pgfmathtruncatemacro{\nnext}{\t + 1}
     \path [->, forwedge] (x2\t) -- (x2\next) ; %node[pos=.5] {$W^{(1,1)}$};
 		\path [->, forwedge] (x3\t) -- (x3\next) ; %node[pos=.5] {$W^{(2,2)}$};
-    \path [->, gradedgeh] (x2\t) -- (x2\next) node[pos=.5, below, align=center] {\scriptsize $P^1(\t)$\\ \scriptsize $Q^1(\t)$};
-		\path [->, gradedgeh] (x3\t) -- (x3\next) node[pos=.5, below, align=center] {\scriptsize $P^2(\t)$\\ \scriptsize $Q^2(\t)$};
+    \path [<-, gradedgeh] (x2\t) -- (x2\next) node[midway,below] {\scriptsize $\delta^1(\nnext)$};
+		\path [<-, gradedgeh] (x3\t) -- (x3\next) node[midway,below] {\scriptsize $\delta^2(\nnext)$};
 
 		%\path [->, draw, thick, spikecolor] (S\t) -- (y\next) node[near start] {$\mathds{1}$};
 		%\path [->, draw, thick, spikecolor] (S\t) -- (U\next) node[near start] {$-\mathds{1}$};

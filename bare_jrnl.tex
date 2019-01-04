@@ -481,7 +481,7 @@ with $\beta=\exp\left(-\frac{\Delta_t}{\tau_\mathrm{mem}}\right)$.
     \centering
     \includegraphics{figures/snn_graph.pdf}
 	\caption{Illustration of the computational graph of a spiking neural network
-	in discrete time. Time steps flow from left to right. Inputs $x^(1)$ are fed
+  in discrete time. Time steps flow from left to right. Inputs $x^{(1)}$ are fed
 	into the network from the bottom and propagate upwards to higher layers. The
 	synaptic currents $I$ are decayed by $\alpha$ in each time step and feed
 	into the membrane potentials $U$. The $U$ are similarly decaying over time
@@ -567,7 +567,7 @@ For illustration purposes here, we assume a neural network with $L$ layers and a
     \centering
     \subfloat[Backward Method]{\includegraphics[width=.4\textwidth]{figures/diagram_bp}}
     \subfloat[Forward Method]{\includegraphics[width=.4\textwidth]{figures/diagram_rtrl}}
-  \caption{\emph{Propagation of Gradients in \Glspl{rnn}}. (Left) At time $t=2$ Errors are propagated backwards. To compute the parameter updates, the states of every neuron ($U^{(i)}$, $I^{(i)}$, and $S^{(i)}$, $i=0,1,2$) and the inputs ($x^{(0)}$) for each time step are stored. (Right) At time t=2, all the information from previous time steps has been propagated forward. The nature of this information is determined by the network structure and neuron dynamics. Note that, in the forward method, the gradient step is backpropagated along the layers in time step $t=2$, but in isolation of the other timesteps. This backward step is challenging in itself, and solutions to achieve this in a local fashion are discussed in Sec.~\ref{sec:spatial_CA}. Nodes $S$, and $I$ were omitted for illustration purposes in this figure.
+  \caption{\emph{Strategies for Temporal Credit Assignment}. (Left) At time $t=2$ Errors are propagated backwards. To compute the parameter updates, the states of every neuron ($U^{(i)}$, $I^{(i)}$, and $S^{(i)}$, $i=0,1,2$) and the inputs ($x^{(0)}$) for each time step are stored. (Right) At time t=2, all the information from previous time steps has been propagated forward. The nature of this information is determined by the network structure and neuron dynamics. Note that, in the forward method, the gradient step is backpropagated along the layers in time step $t=2$, but in isolation of the other timesteps. This backward step is challenging in itself, and solutions to achieve this in a local fashion are discussed in Sec.~\ref{sec:spatial_CA}. Nodes $y$ represent the nodes $S$, $U$, $I$ and $x$ for illustration purposes in this figure.
 }. 
     \label{fig:backwrd_vs_forward_prop}
 \end{figure}
@@ -652,7 +652,7 @@ In the following, we describe examples of both type of solutions.
   \caption{\emph{Spatial error credit assignment and strategies for relaxing gradient \Gls{bp} requirements}. Dashed lines indicate random connections}
 \end{figure}
 
-\paragraph{Gradient \Gls{bptt}}
+\paragraph{Gradient \Gls{bptt} (FZ)}
 
 \paragraph{Random Error \Gls{bp}}
 One family of algorithms that relaxes the symmetry requirement of \Gls{bp} are feedback alignment or random \Gls{bp} algorithms \cite{Lillicrap_etal16_randsyna,Baldi_etal16_learmach}. 
@@ -736,6 +736,25 @@ This forces each layer to learn a set of features that are able to match the top
     
   \end{mdframed}
 \end{infobox}
+
+\section{Implementation}
+
+\section{Application: Learning Gesture Recognition}
+We demonstrate that deep learning algorithms that locally approximate the gradient backpropagation updates using locally synthesized gradients enable synaptic plasticity in spiking neural networks \cite{Kaiser_etal18_synaplas}.
+This approach uses the forward method to overcome temporal credit assignment and local errors to overcome spatial credit assignment. 
+To enable an efficient implementation in GPUs, the neuron model is simplified by omitting recurrent weights, including refractory mechanisms, in the backward pass. This omission results in a forward method that scales as $O(N)$ (instead of $O(N^2)$ for the full forward method).
+\begin{equation}
+  \text{Equations here or not?}
+\end{equation}
+The result is a highly efficient synaptic plasticity rule for multi-layer spiking neural networks.
+Furthermore, our method utilizes existing autodifferentation methods in machine learning frameworks to systematically derive synaptic plasticity rules from task-relevant cost functions and neural dynamics. 
+We benchmark our approach on the DVS Gestures dataset \reffig{fig:dcll_gestures}. 
+\begin{figure}
+  \includegraphics[width=.9\textwidth]{figures/DCLL_illustration}
+  \caption{\label{fig:dcll_gestures} Deep Continuous Local Learning (DCLL) with spikes, applied to the DVSGestures dataset \cite{Amir_etal17_lowpowe}. A three layer convolutional spiking neural network is trained with \gls{sg} using local errors generated using fixed random projections to a local classifier. Learning in DCLL scales linearly with the number of neurons thanks to local rate-based cost functions formed by spike-based basis functions. Thanks to the \gls{sg} approach, the plasticity dynamics (dashed line) are synthesized with automatic differentiation under pyTorch. Results here are shown for the DVS Gestures dataset, 11 gestures recorded using a Dynamic Vision Sensor.}
+\end{figure}
+
+\section{Discussion}
 
 
 

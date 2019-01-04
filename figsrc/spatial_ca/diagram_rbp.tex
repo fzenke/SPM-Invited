@@ -39,8 +39,8 @@ corners, minimum height=2.2em]
 	% Place nodes 
 	\foreach \t in {0,...,\n} {
     \node [sum] (x1\t) at (\sep*\t,0) {$x^{(0)}$};
-		\node [mem, above of=x1\t] (x2\t) {$U^{(1)}$};
-		\node [mem, above of=x2\t] (x3\t) {$U^{(2)}$};
+		\node [mem, above of=x1\t] (x2\t) {$y^{(1)}$};
+		\node [mem, above of=x2\t] (x3\t) {$y^{(2)}$};
     \node [loss, above of=x3\t] (loss\t) {$\mathcal{L}$};
 	}
 
