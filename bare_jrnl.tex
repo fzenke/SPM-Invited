@@ -86,6 +86,12 @@ This tutorial elucidates step-by-step the challenges typically encountered when 
 In so doing, it introduces surrogate gradient methods as a particularly flexible and efficient method to overcome the aforementioned challenges and discusses the ``tricks of the trade''. 
 \end{abstract}
 
+
+% I am adding this only to keep an overview during writing, fzenke
+\tableofcontents
+\newpage
+
+
 \begin{center}
   * Shorten the introduction
   * Describe brain/spiking before the theoretical discussion on Turing machines.
@@ -140,32 +146,6 @@ Their training however requires efficient solutions to the spatial and temporal 
 In this article we focus on these challenges and describe possible remedies by specifically considering the problem of supervised learning in \glspl{snn}.
 %The two key challenges which need to be addressed to successfully train \glspl{snn} are concerned with the spatial and the temporal credit assignment,
 %i.e.\ how weights and parameters of hidden units need to be modified to improve the objective during training.  
-Conventional \glspl{rnn} are trained by minimizing a scalar objective or loss function. 
-In the majority of cases the underlying algorithm for this optimization is gradient descent implemented as either \Gls{bptt} or
-\gls{rtrl}.
-However, for gradient descent to be a well defined training procedure, \glspl{rnn} are typically designed to be continuously varying functions with
-respect to their inputs. 
-The resulting smooth dynamics allow gradients to flow, % CITE
-an essential requirement for gradient-based optimization. 
-In spiking neural networks, however, activation functions are intrinsically
-binary. 
-Consequently, network outputs do not vary continuously with their inputs and gradients are ill-defined, 
-thus precluding the use of gradient-based training techniques. 
-% TODO Make figure if IF neuron with spike no spike difference
-
-To overcome this limitation, several approaches have been devised to learn useful representations in hidden layers of spiking neurons.
-The most common approaches can be coarsely classified into the following categories: 
-i)  ~resorting to entirely unsupervised learning for the hidden units, 
-ii) ~translating conventionally trained ``rate-based'' neural networks to spiking neural networks,
-iii)~smoothing the network model to be continuously differentiable, or 
-iv) ~defining a surrogate gradient as a continuous relaxation of the real
-gradients.  
-Approaches pertaining to unsupervised learning and network translation have been reviewed extensively in \cite{tavanaei_deep_2018}. 
-In this tutorial we focus on the latter two supervised approaches which we will refer to in the following as the ``smoothed'' and \gls{sg} approach.
-%% Move following to body
-%The main difference between the two is that smoothed approaches entail modifications to the forward pass of the network dynamics by either dispensing with binary nonlinearities, by using specific coding schemes, or by introducing stochasticity.  
-%\Gls{sg} methods on the other hand leave the forward pass unchanged and act solely on the learning dynamics. 
-We will first briefly review existing literature on common ``smoothing'' and \gls{sg} approaches before turning to an in depth discussion of how to build functional spiking neural networks using these approaches. 
 %
 %\section{Types of \glspl{rnn}}
 %{\bf Shouldn't we have a short section with a formal defintion first}
@@ -192,216 +172,19 @@ We will first briefly review existing literature on common ``smoothing'' and \gl
 %
 %SNNs as binary RNNs (Friedman's part)
 
-\section{The \gls{rnn} learning problem (Hesham)}
-\glspl{rnn} can be used in a variety of scenarios ranging from time series prediction, to language translation, to automatic speech recognition.
-While there is a large variety of applications, the ingredients of the learning process are typically the same throughout.
-The first ingredient is a cost function, or a loss, which is minimized when the network's response corresponds to the desired behavior.
-In time series prediction for example, this loss could be the difference between the predicted and the true value.
-The second ingredient is a mechanism that updates the network's weights so as to minimize the loss.
-The simplest such mechanism is gradient descent.
-In neural networks, gradient descent can be implemented efficiently using the backpropagation algorithm \refbox{box:bp}.
-There, errors propagate backwards from the point and time of error generation to earlier time points and earlier neurons.
-More precisely, consider two neurons, $u$ and $v$, connected through a weight $w$.
-{\bf Description of non-locality and the problem with the non-differentiable spike generation non-linearity \refbox{box:nonlocal}}
-
-
-
-\section{Smoothed spiking neural networks (Friedemann)}
-
-% Truly smooth models (smooth forward pass)
-The defining characteristic of smoothed \glspl{snn} is that their formulation ensures well-behaved gradients which are directly suitable for optimization.
-Smooth models can be further categorized into soft nonlinearity models, probabilistic models, for which gradients technically are only well defined, or models which either rely rely on rate-codes or
-single-spike temporal codes.  
-
-\subsection{Gradients in soft nonlinearity models}
-
-This approach can in principle be applied
-directly to all spiking neuron models which explicitly include a smooth spike
-generating process. This includes, for instance,  the Hodgkin-Huxley,
-Morris-Lecar, and FitzHugh-Nagumo models \cite{Gerstner_etal14_neurdyna}.
-However, in practice this approach has only been applied successfully by
-\cite{Huh_Sejnowski17_graddesc} using an augmented integrate-and-fire model in
-which the binary spiking nonlinearity was replaced by an continuous-valued
-gating function.  The resulting network constitutes a \gls{rnn} which can be
-optimized using standard methods of \gls{bptt} or \gls{rtrl}.  
-
-% Discussion of shortcomings
-It remains unclear, however, how spike reset dynamics should be coupled into
-such models. More importantly, the soft threshold models compromise on one of
-the key features of \gls{snn}, namely the binary activation function which is
-essential for power efficiency.
-
-
-% Probabilistic models (probabilistic forward pass)
-\subsection{Gradients in probabilistic models}
-
-Another example for smooth models are binary probabilistic models. 
-Binary probabilistic models have been objects of extensive study in the machine
-learning literature mainly in the context of (restricted) Boltzmann machines
-for which efficient local learning rules exist \cite{ackley_learning_1985}. 
-Similarly, the propagation of gradients has been studied for binary stochastic
-models \cite{bengio_estimating_2013}. 
-In simple terms, stochasticity effectively smooths out the hard binary
-nonlinearity which makes it possible to define a gradient on expectation values.
-\glspl{sg} approaches, as we will elucidate below, are direct extensions of
-these ideas to the class of more domain specific spiking neuron models without
-the need for stochasticity.  
-% TODO this needs some more careful research ... 
-
-% Learning in probabilistic spiking framework
-In the neurosciences, the utility of probabilistic models 
-has first been appreciated because it allows to formally define the smooth
-log-likelihood of a spike train which can be optimized using gradient descent
-\cite{pfister_optimal_2006}.
-Although this insight was first discovered in networks without hidden units,
-the same ideas were later extended to multi-layer networks with a single hidden
-layer \cite{gardner_learning_2015}.
-% Both add hidden units (variational learning approach)
-In a similar vein, variational learning approaches have been proven capable
-in learning useful hidden layer representations in \glspl{snn}
-\cite{brea_matching_2013, rezende_stochastic_2014,Mostafa_Cauwenberghs18}.
-However, at the same time the injected noise necessary to smooth out the effect
-of binary nonlinearities has proven challenging to optimize
-\cite{rezende_stochastic_2014}.
-
-
-% f-I curve based approaches
-\subsection{Gradients for rate-based codes}
-
-Another common approach to obtain gradients in spiking neural networks is to
-assume a rate-based coding scheme.
-The main idea is that spike rate is the underlying information-carrying quantity.
-For many plausible neuron models, the supra-threshold firing rate depends
-smoothly on the neuron input. This input-output dependence is captured by the
-so-called f-I curve of a neuron.
-In such cases, the derivative of the f-I curves is suitable for gradient-based optimization. 
-
-% TODO add figure to distinguish between rate and spike coding
-
-There are several examples of this approach. 
-For instance \citet{Hunsberger_Eliasmith15_spikdeep} used an effectively
-rate-coded input scheme to demonstrate competitive performance on standard
-machine learning benchmarks such as CIFAR10 and MNIST.
-A similarly \cite{Lee_etal16_traideep} demonstrated deep learning in spiking
-neural networks using ... % TODO is this translation ?
-
-% Discussion of pros & cons
-Rate-based approaches can offer good performance, but they may be inefficient.
-On the one hand, precise estimation of firing rates requires averaging over
-a number of spikes.  Such averaging requires either relatively high firing rates or
-time because several repeats are needed to average out discretization noise.  
-To some degree this problem can be overcome by spatial averaging over
-large populations of spiking neurons. However, this may comes at the expense of
-more neurons. 
-Alternatively, temporal and resource limitations could be overcome by instead relying on
-spike timing as the information-carrying quantity. This is the idea behind
-spike timing based coding.
-
-
-% Single spike time codes
-\subsection{Gradients for single spike timing based codes}
-
-In an effort to optimize \glspl{snn} without potentially harmful noise
-injection and without reverting to a fully rate-based coding scheme, 
-several studies have formulated spiking neural
-networks as a set of firing times.
-In such a temporal coding setting, individual spikes can carry significantly more
-information compared to rate-based schemes.
-
-When using a purely firing time based code, the information carrying quantity is
-firing time which can depend smoothly on neuronal inputs as long as a hidden
-unit does not fall quiescent.
-The idea of single spike temporal coding was 
-pioneered in SpikeProp \cite{bohte_error-backpropagation_2002}.
-In this work the analytic expressions of firing times for hidden units 
-were linearized, allowing to compute approximate hidden layer gradients fully
-analytically. 
-Several variations and extensions of this approach have been developed,
-to cope with, for instance, multiple hidden layers and spikes
-\cite{banerjee_learning_2016}. % TODO needs work here
-More recently, a similar approach without the need for linearization 
-was used in \cite{Mostafa16_supelear} where the author computed the spike timing 
-gradients explicitly for non-leaky integrate-and-fire neurons. 
-Intriguingly the work, showed to yield competitive performance to conventional
-networks on MNIST.
-% TODO Should write a little more, @Hesham would the right person to write this
-% and also to check whether this is correct
-
-% Discussion & Limitations
-Although the spike timing formulation does in certain cases
-yield well-defined gradients, it may suffer from certain
-limitations. 
-For instance, the formulation of SpikeProp required each hidden
-unit to emit exactly one spike per trial. Moreover, it is difficult to define 
-firing time for quiescent units, although population sparseness, as it is
-ubiquitously found in the brain, is presumably crucial for power
-efficiency.
-% TODO @Hesham ?
-
-
-\section{Surrogate gradients (Friedemann)}
-
-To overcome some of the difficulties which are associated with smoothed \glspl{snn}, we now introduce the notion of \gls{sg} methods.
-Their defining characteristic is that instead of changing the model definition, a \gls{sg} is introduced as a continuous relaxation of the non-smooth spiking threshold for purposes of numerical optimization.
-Importantly, this approximation is only used in the parameter updates and does not affect the forward pass of the network directly.
-The use of \glspl{sg} allows to efficiently train \glspl{snn} without specifying whether a temporal or spike-timing based coding scheme is to be used. 
-
-Like vanilla gradient-descent, \gls{sg} learning can deal with the spatial and temporal credit assignment problem by either \gls{bptt} or, alternatively, by forward-propagation of all relevant information through eligibility traces (see Section~\ref{sec:temporal_credit_assignment} for details). 
-In doing so, \gls{sg} learning can be reduced to local three factor rules which may be more amenable for hardware implementations. 
-In the following we briefly review existing work relying on \gls{sg} methods before turning to a more in-depth treatment of the underlying principles and capabilities. 
-
-
-One of the first uses of this approach is described in
-\citet{bohte_error-backpropagation_2011} where the partial derivative of a
-spiking neuron was approximated by the derivative of a \gls{relu}
-and similar path was taken to optimize binary neural networks
-\citep{courbariaux_binarized_2016}.
-Essentially the same idea underlies the training of large-scale
-convolutional networks with binary activations on neuromorphic hardware
-\cite{esser_convolutional_2016}.
-More recently, \cite{bellec_long_2018} successfully trained networks of 
-neurons with slow temporal dynamics using \gls{bptt}. Encouragingly, the 
-authors found that such networks can perform at par with conventional 
-\gls{lstm} networks.
-% biologically plausible
-Finally, \cite{zenke_superspike:_2018} illustrated biologically plausible online
-learning using a similar \gls{sg} approach to learn precisely timed spike train
-transformations. 
-
-% TODO need to sort the papers below into above categories
-\cite{OConnor_Welling16_deepspik} % TODO Help! Not sure I understand this paper and whether this qualifies as SG need to. Emre: I think we can omit this. Emre: Let's omit for the time being.
-% TODO need to add https://arxiv.org/abs/1812.07040
-% TODO need to add Slayer paper 
-
-% Spiking Expectation Maximization \cite{Nessler_etal13_bayecomp}, 
-% temporal codes for deep learning with spikes \cite{OConnor_Welling16_deepspik}, 
-% train-and-transfer techniques \cite{Esser_etal16_convnetw}, 
-% and predictive coding \cite{Deneve_etal17_braieffi}.
-
-
-
-%%% END of this section
-
-
-
-
-
 \section{Understanding \glspl{snn} as \glspl{rnn} (FRIEDEMANN)}
 \label{sec:understanding_ssn_as_rnn}
 
 In this section we provide a brief walk-through how to formally map a \gls{snn} to \gls{rnn} 
-which will provide the basis to to training a spiking neural network with \glspl{sg}.
+which will provide the basis to training a spiking neural network with \glspl{sg}.
 To that end, we will first introduce the \gls{lif} neuron model
 with current-based synapses as 
 a standard neuron model which has wide use in computational neuroscience \cite{Gerstner_etal14_neurdyna}.
 
 Next, we will reformulate this model in discrete time and show its formal equivalence to a discrete time \gls{rnn} with binary activation function. 
 Formulating \glspl{snn} as \glspl{rnn} 
-%is a worthwhile conceptional exercise. 
-%Decades of research in machine learning has revealed a rich repertoire of methods and tools to efficiently train \glspl{rnn}.
-%Thus, by casting \glspl{snn} into this framework 
-allows us to directly transfer and apply existing methods to train \glspl{rnn}. 
-
+allows us to directly transfer and apply existing methods to train \glspl{rnn} and will serve as the conceptional framework for the rest of this article. 
+If you are not familiar with the \gls{lif} neuron model, you can skip most of the following derivations and up to Equation~\eqref{eq:mem_discrete_time}. 
 
 % Introduce LIF in differential form
 We begin by recalling that a single \gls{lif} neuron with index $i$ 
@@ -475,6 +258,7 @@ $0<\alpha<1$ for finite and positive $\tau_\mathrm{syn}$.  Moreover, $S_j(t) \in
     \label{eq:mem_discrete_time}
 \end{equation}
 with $\beta=\exp\left(-\frac{\Delta_t}{\tau_\mathrm{mem}}\right)$.
+In discrete time, the output ``spikes'' of neuron $i$ are simply given by $S_i(t)=\Theta(U_i(t))$.
 
 % Formulate as network and link to RNN -- trivial
 \begin{SCfigure}[1][htbp]
@@ -501,23 +285,258 @@ Equations~\eqref{eq:syn_discrete_time} and~\eqref{eq:mem_discrete_time}
 characterize the dynamics of a \gls{rnn}
 (Figure~\ref{fig:snn_computational_graph}).  Specifically, the cell state of
 neuron $i$ is characterized by the instantaneous synaptic currents $I_i$ and the
-membrane voltage $U_i$.  Importantly, these equations can be directly simulated
-using standard machine learning libraries with auto-differentiation
-capabilities.
+membrane voltage $U_i$.  
+It is straight forward to evaluate these equations. Moreover, we can use
+standard machine learning libraries with auto-differentiation capabilities to do so.
+% TODO perhaps add a figure of a spiking neuron here (FRIEDEMANN)
 
-Gradient-based training is used commonly to train \glspl{rnn}, either using
-backward mode automatic differentiation (\gls{bptt}) or, less commonly, forward
-mode automatic differentiation (\gls{rtrl}).  The main reason why these methods
-will fail when directly applied to the system defined by
-Equations~\eqref{eq:syn_discrete_time} and~\eqref{eq:mem_discrete_time} is the
-occurrence of the Heaviside function in \eqref{eq:spike}.  The partial
-derivative of the Heaviside function with respect to the membrane voltage
-$\frac{\partial S_i(t)}{\partial U_i(t)}$ is zero everywhere except for
-$U_i(t)=\vartheta$ where it goes to infinity.  Thus the spiking nonlinearity in
-\glspl{snn} creates an extreme case of the vanishing gradient problem in which
-gradients either \glspl{snn} vanish or explode at each spiking nonlinearity.
-How this problem is circumvented --- at least partially --- by using \gls{sg} is
-the topic of the next sections.
+% Segue to "training" and learning problem
+We have how seen that \glspl{snn} constitute a special case of \glspl{rnn}.
+However, so far we have not talked about how the weights in any \gls{rnn} should be set to implement a specific computational function.
+Next we turn our attention to learning. 
+In other words, we now focus on methods which permit us to systematically change the weights in a given network to implement a specific computational function.
+
+
+\section{The \gls{rnn} learning problem (Hesham)}
+Because \glspl{rnn} can be used in a variety of scenarios ranging from time series prediction, over language translation, to automatic speech recognition, powerful machine learning methods exist to train them. 
+In the following we discuss the most common approaches before analyzing their applicability to \glspl{snn}.
+
+The ingredients of the learning process are typically the same throughout.
+The first ingredient is a cost function, or a loss, which is minimized when the network's response corresponds to the desired behavior.
+In time series prediction for example, this loss could be the difference between the predicted and the true value.
+The second ingredient is a mechanism that updates the network's weights so as to minimize the loss.
+The simplest such mechanism is gradient descent.
+In neural networks, gradient descent can be implemented efficiently using the backpropagation algorithm \refbox{box:bp}.
+There, errors propagate backwards from the point and time of error generation to earlier time points and earlier neurons.
+More precisely, consider two neurons, $u$ and $v$, connected through a weight $w$.
+{\bf Description of non-locality and the problem with the non-differentiable spike generation non-linearity \refbox{box:nonlocal}}
+
+% TODO here could be the logical entry point for some of the spatial and temporal credit assignment intro that Emre has written in the end
+
+% Segue to spiking neuron case to describe problem of non-differability
+Because of the structural similarly it seems only natural to assume that gradient-based learning can directly be applied to \glspl{snn} in the same way as this is done for vanilla \glspl{rnn}. 
+However, in the spiking neuron case several an important issue arises
+with regard to their differentiabilty.
+To better understand this issue we now consider the case of single \gls{lif} neuron using the framework we introduced above.
+
+
+\section{Challenges of gradient-based learning with spiking neurons}
+
+As we have learned in the previous sections, gradient-based training is used commonly to train \glspl{rnn}.  
+
+There are two key challenges to gradient-based learning in \gls{snn}.
+% under construction, fzenke
+Both challenges relate to 
+The first challenge concerns the lack of differentiability of the spiking architecture itself. 
+The second challenge 
+
+By inspection of Equations~\eqref{eq:bp_deep} and~\eqref{eq:forward_mode_differentiation} it is easy to appreciate the occurrence of the partial derivative $\rho^\prime$ of the neuronal activation function $\rho$.
+For our spiking neuron, however, we have $\rho(U(t))=S(U(t))=\Theta(U(t)-\vartheta)$ (cf.\ Eq.~\eqref{eq:spike}) and thus 
+\begin{equation}
+\rho^\prime(U(t))=\frac{\partial \rho(U(t))}{\partial U(t)}=
+\begin{cases}
+0 & U\ne\vartheta\\
+\infty & U=\vartheta
+\end{cases}
+\end{equation}
+The nonlinearity $\rho$ appears as a multiplicative factor in the Expressions~\eqref{eq:bp_deep} and~\eqref{eq:forward_mode_differentiation}, and consequently the gradients evaluate to either~$0$ or~$\infty$ respectively which makes them unsuitable for gradient based optimization.
+
+
+
+\section{Alternative and approximate approaches to learning in spiking neurons}
+To overcome this limitation, several approaches have been devised to train \glspl{snn} with varying degrees of success.
+The most common approaches can be coarsely classified into the following categories: 
+  i)~resorting to entirely unsupervised learning for the hidden units, 
+ ii)~translating conventionally trained ``rate-based'' neural networks to spiking neural networks,
+iii)~smoothing the network model to be continuously differentiable, or 
+ iv)~defining a surrogate gradient as a continuous relaxation of the real
+gradients.  
+Approaches pertaining to unsupervised learning and network translation have been reviewed extensively in \cite{tavanaei_deep_2018}. 
+In this tutorial we focus on the latter two supervised approaches which we will refer to in the following as the ``smoothed'' and \gls{sg} approach.
+%% Move following to body
+%The main difference between the two is that smoothed approaches entail modifications to the forward pass of the network dynamics by either dispensing with binary nonlinearities, by using specific coding schemes, or by introducing stochasticity.  
+%\Gls{sg} methods on the other hand leave the forward pass unchanged and act solely on the learning dynamics. 
+We will first briefly review existing literature on common ``smoothing'' and \gls{sg} approaches before turning to an in-depth discussion of how to build functional spiking neural networks. 
+
+
+\subsection{Smoothed spiking neural networks (Friedemann)}
+
+% Truly smooth models (smooth forward pass)
+The defining characteristic of smoothed \glspl{snn} is that their formulation ensures well-behaved gradients which are directly suitable for optimization.
+Smooth models can be further categorized into soft nonlinearity models, probabilistic models, for which gradients technically are only well defined, or models which either rely rely on rate-codes or
+single-spike temporal codes.  
+
+
+\subsubsection{Gradients in soft nonlinearity models}
+
+This approach can in principle be applied
+directly to all spiking neuron models which explicitly include a smooth spike
+generating process. This includes, for instance,  the Hodgkin-Huxley,
+Morris-Lecar, and FitzHugh-Nagumo models \cite{Gerstner_etal14_neurdyna}.
+However, in practice this approach has only been applied successfully by
+\cite{Huh_Sejnowski17_graddesc} using an augmented integrate-and-fire model in
+which the binary spiking nonlinearity was replaced by an continuous-valued
+gating function.  The resulting network constitutes a \gls{rnn} which can be
+optimized using standard methods of \gls{bptt} or \gls{rtrl}.  
+
+% Discussion of shortcomings
+It remains unclear, however, how spike reset dynamics should be coupled into
+such models. More importantly, the soft threshold models compromise on one of
+the key features of \gls{snn}, namely the binary activation function which is
+essential for power efficiency.
+
+
+% Probabilistic models (probabilistic forward pass)
+\subsubsection{Gradients in probabilistic models}
+
+Another example for smooth models are binary probabilistic models. 
+Binary probabilistic models have been objects of extensive study in the machine
+learning literature mainly in the context of (restricted) Boltzmann machines
+for which efficient local learning rules exist \cite{ackley_learning_1985}. 
+Similarly, the propagation of gradients has been studied for binary stochastic
+models \cite{bengio_estimating_2013}. 
+In simple terms, stochasticity effectively smooths out the hard binary
+nonlinearity which makes it possible to define a gradient on expectation values.
+\glspl{sg} approaches, as we will elucidate below, are direct extensions of
+these ideas to the class of more domain specific spiking neuron models without
+the need for stochasticity.  
+% TODO this needs some more careful research ... 
+
+% Learning in probabilistic spiking framework
+In the neurosciences, the utility of probabilistic models 
+has first been appreciated because it allows to formally define the smooth
+log-likelihood of a spike train which can be optimized using gradient descent
+\cite{pfister_optimal_2006}.
+Although this insight was first discovered in networks without hidden units,
+the same ideas were later extended to multi-layer networks with a single hidden
+layer \cite{gardner_learning_2015}.
+% Both add hidden units (variational learning approach)
+In a similar vein, variational learning approaches have been proven capable
+in learning useful hidden layer representations in \glspl{snn}
+\cite{brea_matching_2013, rezende_stochastic_2014,Mostafa_Cauwenberghs18}.
+However, at the same time the injected noise necessary to smooth out the effect
+of binary nonlinearities has proven challenging to optimize
+\cite{rezende_stochastic_2014}.
+
+
+% f-I curve based approaches
+\subsubsection{Gradients for rate-based codes}
+
+Another common approach to obtain gradients in spiking neural networks is to
+assume a rate-based coding scheme.
+The main idea is that spike rate is the underlying information-carrying quantity.
+For many plausible neuron models, the supra-threshold firing rate depends
+smoothly on the neuron input. This input-output dependence is captured by the
+so-called f-I curve of a neuron.
+In such cases, the derivative of the f-I curves is suitable for gradient-based optimization. 
+
+% TODO add figure to distinguish between rate and spike coding
+
+There are several examples of this approach. 
+For instance \citet{Hunsberger_Eliasmith15_spikdeep} used an effectively
+rate-coded input scheme to demonstrate competitive performance on standard
+machine learning benchmarks such as CIFAR10 and MNIST.
+A similarly \cite{Lee_etal16_traideep} demonstrated deep learning in spiking
+neural networks using ... % TODO is this translation ?
+
+% Discussion of pros & cons
+Rate-based approaches can offer good performance, but they may be inefficient.
+On the one hand, precise estimation of firing rates requires averaging over
+a number of spikes.  Such averaging requires either relatively high firing rates or
+time because several repeats are needed to average out discretization noise.  
+To some degree this problem can be overcome by spatial averaging over
+large populations of spiking neurons. However, this may comes at the expense of
+more neurons. 
+Alternatively, temporal and resource limitations could be overcome by instead relying on
+spike timing as the information-carrying quantity. This is the idea behind
+spike timing based coding.
+
+
+% Single spike time codes
+\subsubsection{Gradients for single spike timing based codes}
+
+In an effort to optimize \glspl{snn} without potentially harmful noise
+injection and without reverting to a fully rate-based coding scheme, 
+several studies have formulated spiking neural
+networks as a set of firing times.
+In such a temporal coding setting, individual spikes can carry significantly more
+information compared to rate-based schemes.
+
+When using a purely firing time based code, the information carrying quantity is
+firing time which can depend smoothly on neuronal inputs as long as a hidden
+unit does not fall quiescent.
+The idea of single spike temporal coding was 
+pioneered in SpikeProp \cite{bohte_error-backpropagation_2002}.
+In this work the analytic expressions of firing times for hidden units 
+were linearized, allowing to compute approximate hidden layer gradients fully
+analytically. 
+Several variations and extensions of this approach have been developed,
+to cope with, for instance, multiple hidden layers and spikes
+\cite{banerjee_learning_2016}. % TODO needs work here
+More recently, a similar approach without the need for linearization 
+was used in \cite{Mostafa16_supelear} where the author computed the spike timing 
+gradients explicitly for non-leaky integrate-and-fire neurons. 
+Intriguingly the work, showed to yield competitive performance to conventional
+networks on MNIST.
+% TODO Should write a little more, @Hesham would the right person to write this
+% and also to check whether this is correct
+
+% Discussion & Limitations
+Although the spike timing formulation does in certain cases
+yield well-defined gradients, it may suffer from certain
+limitations. 
+For instance, the formulation of SpikeProp required each hidden
+unit to emit exactly one spike per trial. Moreover, it is difficult to define 
+firing time for quiescent units, although population sparseness, as it is
+ubiquitously found in the brain, is presumably crucial for power
+efficiency.
+% TODO @Hesham ?
+
+
+\subsection{Surrogate gradients (Friedemann)}
+
+To overcome some of the difficulties which are associated with smoothed \glspl{snn}, we now introduce the notion of \gls{sg} methods.
+Their defining characteristic is that instead of changing the model definition, a \gls{sg} is introduced as a continuous relaxation of the non-smooth spiking threshold for purposes of numerical optimization.
+Importantly, this approximation is only used in the parameter updates and does not affect the forward pass of the network directly.
+The use of \glspl{sg} allows to efficiently train \glspl{snn} without specifying whether a temporal or spike-timing based coding scheme is to be used. 
+
+Like vanilla gradient-descent, \gls{sg} learning can deal with the spatial and temporal credit assignment problem by either \gls{bptt} or, alternatively, by forward-propagation of all relevant information through eligibility traces (see Section~\ref{sec:temporal_credit_assignment} for details). 
+In doing so, \gls{sg} learning can be reduced to local three factor rules which may be more amenable for hardware implementations. 
+In the following we briefly review existing work relying on \gls{sg} methods before turning to a more in-depth treatment of the underlying principles and capabilities. 
+
+
+One of the first uses of this approach is described in
+\citet{bohte_error-backpropagation_2011} where the partial derivative of a
+spiking neuron was approximated by the derivative of a \gls{relu}
+and similar path was taken to optimize binary neural networks
+\citep{courbariaux_binarized_2016}.
+Essentially the same idea underlies the training of large-scale
+convolutional networks with binary activations on neuromorphic hardware
+\cite{esser_convolutional_2016}.
+More recently, \cite{bellec_long_2018} successfully trained networks of 
+neurons with slow temporal dynamics using \gls{bptt}. Encouragingly, the 
+authors found that such networks can perform at par with conventional 
+\gls{lstm} networks.
+% biologically plausible
+Finally, \cite{zenke_superspike:_2018} illustrated biologically plausible online
+learning using a similar \gls{sg} approach to learn precisely timed spike train
+transformations. 
+
+% TODO need to sort the papers below into above categories
+\cite{OConnor_Welling16_deepspik} % TODO Help! Not sure I understand this paper and whether this qualifies as SG need to. Emre: I think we can omit this. Emre: Let's omit for the time being.
+% TODO need to add https://arxiv.org/abs/1812.07040
+% TODO need to add Slayer paper 
+
+% Spiking Expectation Maximization \cite{Nessler_etal13_bayecomp}, 
+% temporal codes for deep learning with spikes \cite{OConnor_Welling16_deepspik}, 
+% train-and-transfer techniques \cite{Esser_etal16_convnetw}, 
+% and predictive coding \cite{Deneve_etal17_braieffi}.
+
+
+
+%%% END of this section
+
+
 
 
 \section{Credit Assignment in Spiking Neural Networks}
@@ -556,7 +575,7 @@ Although non-locality in a model of computation can be seen as a serious shortco
 Thus, solving the ability to learn and process using local information extends well beyond the neuroscientists' agenda: it can enable information processing systems that approach the reliability and energy-efficiency of the brain.
 In the following two sections, we describe solutions to the spatial and temporal credit assignment problems in spiking neural networks.
 
-\subsection{Temporal Credit Assignment (Emre)}\label{sec:temporal_CA}
+\subsection{Temporal Credit Assignment (Emre)}
 
 \label{sec:temporal_credit_assignment}
 Solving a temporal credit assignment problem can be achieved using two different methods \cite{Williams_Zipser89_learalgo}, one backward method, one forward method (Fig. \ref{fig:backwrd_vs_forward_prop})
@@ -593,7 +612,7 @@ In practice this is an expensive operation, as the entire history of activation 
 The use of standard backpropagation on the unrolled network directly enables the use of autodifferentiation tools offered in model machine learning toolkits~\cite{Bellec_etal18_longshor,Shrestha_Orchard18_slayspik,Wozniak_etal18_deepnetw}.\\
 \item The forward method: The information required for computing the errors is propagated forward.
 %Use Williams and Zipser equations, and explain special case where the ODE has a solution = superspike
-  For a leaky I\&F neuron with first order dynamics, recall that the discrete-time membrane potential and synaptic current can be expressed as Eqs. (\ref{eq:syn_discrete_time}) and (\ref{eq:mem_discrete_time}).
+  For a \gls{lif} neuron with first order dynamics, recall that the discrete-time membrane potential and synaptic current can be expressed as Eqs.~\eqref{eq:syn_discrete_time} and \eqref{eq:mem_discrete_time}.
 %\[
 %\begin{split}
 %U_i[t+1] & = \beta U_i[t] + I_i[t]\\
@@ -602,7 +621,7 @@ The use of standard backpropagation on the unrolled network directly enables the
 %\]
 The gradient of a cost function $\mathcal{L}[t]$ with respect to weight $W_{ij}$ is then:
 \[
-\begin{split}
+\begin{split} \label{eq:forward_mode_differentiation}
  \Delta {W_{ij}} &\propto \frac{\partial }{\partial W_{ij}} \mathcal{L}[t+1] = \delta_i[t+1] P_{ij}[t+1]\\
  P_{ij}[t+1]     &= \frac{\partial} {\partial W_{ij}}  U_i[t+1] = \beta P_{ij}[t] + Q_{ij}[t] + \sum_j W_{ij} \sigma'(U_j[t-1]) P_{ij}[t-1]\\
  Q_{ij}[t+1]     &= \frac{\partial} {\partial W_{ij}}  I_i[t+1] = \alpha Q_{ij}[t] + \sigma(U_i[t]) + \sum_j W_{ij} \sigma'(U_j[t-1]) P_{ij}[t-1],
@@ -652,7 +671,11 @@ In the following, we describe examples of both type of solutions.
   \caption{\emph{Spatial error credit assignment and strategies for relaxing gradient \Gls{bp} requirements}. Dashed lines indicate random connections}
 \end{figure}
 
+
 \paragraph{Gradient \Gls{bptt} (FZ)}
+% TODO write section.
+% Here is what Emre had in mind: Basically using BPTT to train  spiking neural networks. I remember you had some suggestions. Alternatively we can just summarize Slayer / spiking LSTM.
+
 
 \paragraph{Random Error \Gls{bp}}
 One family of algorithms that relaxes the symmetry requirement of \Gls{bp} are feedback alignment or random \Gls{bp} algorithms \cite{Lillicrap_etal16_randsyna,Baldi_etal16_learmach}. 
