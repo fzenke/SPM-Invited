@@ -246,7 +246,7 @@ now set $U_\mathrm{rest}=0$, $R=1$, and $\vartheta=1$, which does not affect our
 arguments.  Assuming a small simulation time step of $\Delta_t>0$
 Equation~\eqref{eq:cuba_syn} is approximated by
 \begin{equation}
-    I_i(t+1) = \alpha I_i(t) + \sum_j W_j S_j(t)
+  I_i(t+1) = \alpha I_i(t) + \sum_j W_{ij} S_j(t)
     \label{eq:syn_discrete_time}
 \end{equation}
 with the decay strength $\alpha$ given by
@@ -773,7 +773,7 @@ The result is a highly efficient synaptic plasticity rule for multi-layer spikin
 Furthermore, our method utilizes existing autodifferentation methods in machine learning frameworks to systematically derive synaptic plasticity rules from task-relevant cost functions and neural dynamics. 
 We benchmark our approach on the DVS Gestures dataset \reffig{fig:dcll_gestures}. 
 \begin{figure}
-  \includegraphics[width=.9\textwidth]{figures/DCLL_illustration}
+  \includegraphics[width=.9\textwidth]{figures/DCLL_illustration.pdf}
   \caption{\label{fig:dcll_gestures} Deep Continuous Local Learning (DCLL) with spikes, applied to the DVSGestures dataset \cite{Amir_etal17_lowpowe}. A three layer convolutional spiking neural network is trained with \gls{sg} using local errors generated using fixed random projections to a local classifier. Learning in DCLL scales linearly with the number of neurons thanks to local rate-based cost functions formed by spike-based basis functions. Thanks to the \gls{sg} approach, the plasticity dynamics (dashed line) are synthesized with automatic differentiation under pyTorch. Results here are shown for the DVS Gestures dataset, 11 gestures recorded using a Dynamic Vision Sensor.}
 \end{figure}
 
