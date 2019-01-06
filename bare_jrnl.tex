@@ -27,7 +27,7 @@
 \usepackage[margin=1.25in]{geometry}
 \geometry{top=1in, left=1.25in, right=1.25in, bottom=1in}
 \usepackage{setspace}
-%\doublespacing
+\doublespacing
 \usepackage[numbers, square, comma, sort&compress]{natbib}
 \usepackage{caption}
 \usepackage{mdframed}
@@ -43,6 +43,8 @@
 \newcommand{\reffigs}[1]{{Figs.~\ref{#1}}}
 \newcommand{\refsec}[1]{{Sec.~\ref{#1}}}
 \newcommand{\D}{\mathrm{d}}
+\newcommand{\Dd}[1]{\frac{\mathrm{d}}{\mathrm{d} #1}}
+\newcommand{\Dp}[2][]{\frac{\partial #1}{\partial #2}}
 
 
 % Define acronymns
@@ -96,7 +98,6 @@ In so doing, it introduces surrogate gradient methods as a particularly flexible
   * Shorten the introduction
   * Describe brain/spiking before the theoretical discussion on Turing machines.
   * Section V too long, breaks the flow. Move Alternative methods to box?
-  
 \end{center}
 
 \section{Introduction}
@@ -144,8 +145,8 @@ A body of work has focused on training spiking neural networks without hidden un
 florian_chronotron:_2012, mohemmed_span:_2012, memmesheimer_learning_2014, Anwani_Rajendran15_normappr}, \emph{i.e.}\ units which are neither directly connected to the input nor the output of the network.  
 Properly training hidden units is necessary to solve a majority of complex, real-world problems.
 Their training however requires efficient solutions to the spatial and temporal credit assignment problems, and creates a set of specific challenges.  
-
 In this article we focus on these challenges and describe possible remedies by specifically considering the problem of supervised learning in \glspl{snn}.
+
 %The two key challenges which need to be addressed to successfully train \glspl{snn} are concerned with the spatial and the temporal credit assignment,
 %i.e.\ how weights and parameters of hidden units need to be modified to improve the objective during training.  
 %
@@ -177,8 +178,35 @@ In this article we focus on these challenges and describe possible remedies by s
 \section{Understanding \glspl{snn} as \glspl{rnn} (FRIEDEMANN)}
 \label{sec:understanding_ssn_as_rnn}
 
+\begin{infobox}
+  \begin{mdframed}[backgroundcolor=black!10]\small
+  \caption{Recurrent Neural Networks}
+  %Discrete-time RNN:
+    \begin{align}
+    y[t] = & \sigma(a[t]) \\
+    a[t+1] = & V y[t] + W y[t]
+    \end{align}
+    
+%    Continuous-time RNN
+%    \begin{align}
+%    x(t) = & \sigma(h(t)) \\
+%    \frac{dh}{dt} = &g(V h(t), W x(t))
+%    \end{align}
+%    
+%    Approximation of the continuous-time RNN by a discrete RNN
+%    
+%    \[
+%    \begin{split}
+%    x[t] = & \sigma(h[t]) \\
+%    h[t+1] = & h[t] + \Delta t g(V h(t),{\bf W}x(t))
+%    \end{split}
+%    \]
+
+  \end{mdframed}
+\end{infobox}
+
 In this section we provide a brief walk-through how to formally map a \gls{snn} to \gls{rnn} 
-which will provide the basis to training a spiking neural network with \glspl{sg}.
+which will provide the basis to understanding the challenges of training \gls{snn} and how to solve them.
 To that end, we will first introduce the \gls{lif} neuron model
 with current-based synapses as a standard neuron model which has wide use in computational neuroscience \cite{Gerstner_etal14_neurdyna}. 
 Next, we will reformulate this model in discrete time and show its formal equivalence to a discrete time \gls{rnn} with binary activation function. 
@@ -242,14 +270,14 @@ train $S_i$ of neuron $i$ as a nonlinear function of the membrane voltage
     \label{eq:spike}
 \end{equation}
 where $\Theta$ denotes the Heaviside step function.  For the sake of brevity we
-now set $U_\mathrm{rest}=0$, $R=1$, and $\vartheta=1$, which does not affect our
-arguments.  Assuming a small simulation time step of $\Delta_t>0$
+typically set $U_\mathrm{rest}=0$, $R=1$, and $\vartheta=1$, which does not affect our arguments.  
+Assuming a small simulation time step of $\Delta_t>0$,
 Equation~\eqref{eq:cuba_syn} is approximated by
 \begin{equation}
   I_i(t+1) = \alpha I_i(t) + \sum_j W_{ij} S_j(t)
     \label{eq:syn_discrete_time}
 \end{equation}
-with the decay strength $\alpha$ given by
+with the decay strength 
 $\alpha=\exp\left(-\frac{\Delta_t}{\tau_\mathrm{syn}} \right)$.  Note that
 $0<\alpha<1$ for finite and positive $\tau_\mathrm{syn}$.  Moreover, $S_j(t) \in
 [0,1]~ \forall t$.  We can now express Equation~\eqref{eq:lif} as follows 
@@ -306,12 +334,18 @@ The first ingredient is a cost function, or a loss, which is minimized when the 
 In time series prediction for example, this loss could be the difference between the predicted and the true value.
 The second ingredient is a mechanism that updates the network's weights so as to minimize the loss.
 The simplest and yet powerful mechanism to achieve this is gradient descent.
-It holds the solution to the spatial credit assignment.
 
+In gradient-based learning, the parameter updates contain a term that relates to the local error or, more generally, the derivative of the loss.
+In a neural network, this term is a function of downstream states and variables.
+This dependence is caused by the necessity to assign credit to that node and by the lack of explicit targets for it.
+In conventional neural networks, this \emph{credit assignment problem} is solved by backpropagating the errors from the output layer using the chain rule (\emph{i.e.} the gradient BP rule).
+
+%It holds the solution to the spatial credit assignment.
+In the following, we show how gradient descent solves the problem of credit assignment. 
+For reasons that will become clear later, we separate the temporal and spatial aspects of credit assignment.
 
 \subsection{Spatial Credit Assignment (HM, EN, FZ)}
 \label{sec:spatial_CA}
-
 In multi-layer neural networks, gradient descent can be implemented efficiently using the backpropagation algorithm \refbox{box:bp}. 
 In its simplest form, the backpropagation algorithm 
 assigns credit (or blame) to the parameters, e.g.\ input weights of connected neurons, and computes how parameters should be updated differentially to yield an overall decrease in loss.
@@ -322,34 +356,57 @@ While this theoretical guarantee is highly desirable, it comes at the cost of mo
 These requirements can be relaxed by either:
 1)~Approximating the error backpropagation step through cheaper means that incur less memory, communication and computational overhead;
 2)~Formulating an alternative learning problem where the errors for each neuron are proximally generated, both in space and time.
-In the following, we describe examples of both type of solutions.
+%In the following, we describe examples of both type of solutions.
 
 % TODO don't know what to do with this sentence
 {\bf Description of non-locality and the problem with the non-differentiable spike generation non-linearity \refbox{box:nonlocal}}
 
-
+% TODO the box needs a figure of the network
 \begin{infobox}
   \begin{mdframed}[backgroundcolor=black!10]\small
-    \caption{\label{box:bp} The Gradient Backpropagation Rule} The task of learning is to minimize this cost over the entire dataset.
-    This can be done efficiently using the gradient descent rule, which modifies the network parameters $\mathbf{w}$ in the direction opposite to the gradient:
+    \caption{\label{box:bp} The Gradient Backpropagation Rule for Recurrent Neural Networks} 
+    The task of learning is to minimize a cost function $\mathcal{L}$ over the entire dataset.
+    In a neural network, this can be achieved by gradient descent, which modifies the network parameters $\mathbf{w}$ in the direction opposite to the gradient:
     %
     \begin{equation}\label{eq:bp_shallow}
       \begin{split}
-        w_{ij} \leftarrow w_{ij} - \eta \Delta w_{ij},  \text{where } \Delta w_{ij} = \frac{\mathrm{\partial}}{\mathrm{\partial} w_{ij}} L = \rho'\left(\sum_j w_{ij} x_j\right) e_i x_j,
+        W_{ij} \leftarrow W_{ij} - \eta \Delta W_{ij},  & \text{where } \Delta W_{ij} =
+        %\frac{\mathrm{\partial}}{\mathrm{\partial} w_{ij}} \mathcal{L} = \rho'\left(\sum_j w_{ij} x_j\right) e_i x_j,
+        \Dp[\mathcal{L}]{W_{ij}} = 
+       \Dp[\mathcal{L}]{y_i} %err_i
+       \Dp[y_i]{ a_i }       %\rho'\left( a_i \right)
+       \Dp[a_i]{W_{ij}}      %x_j  
+        %     & = e_i \rho'\left(\sum_j w_{ij} x_j\right) x_j,0
       \end{split}
     \end{equation}
     %
-    and where $\eta$ is a small learning rate. 
-    In deep networks, the weights of the hidden layer neurons are modified by backpropagating the errors from the prediction layer using the chain rule. 
-    Using superscripts $l=0,...,N$ to denote the layer ($0$ is input, $N$ is output):
+    with $a_i = \sum_j W_{ij} x_j$ is the total input to the neuron and $\eta$ a small learning rate. 
+    The first term is the error of neuron $i$ and the second term reflects the sensitivity of the neuron output to changes in the parameter.
+    In multilayer networks, gradient descent is expressed as the backpropagation of the errors starting from the prediction (output) layer using the chain rule to the inputs. 
+    Using superscripts $l=0,...,L$ to denote the layer ($0$ is input, $L$ is output):
     %
     \begin{equation}\label{eq:bp_deep}
-      \frac{\mathrm{\partial}}{\mathrm{\partial} W^{l}_{ij}} L = \delta_{i}^{l}  S^{l}_j,\text{ where }\delta_{i}^{l} = \rho'\left( U_i^l \right) \sum_k \delta_{k}^{l+1}[t] W_{ki}^{l+1},
+      \frac{\mathrm{\partial}}{\mathrm{\partial} W^{l}_{ij}} \mathcal{L} = \delta_{i}^{l}  y^{l}_j,\text{ where }\delta_{i}^{l} = \rho'\left( a_i^l \right) \sum_k \delta_{k}^{l+1} W_{ki}^{l},
     \end{equation}
-    where the $\delta_{i}^N=e_i$, as in Eq. \ref{eq:bp_shallow} and $y_{i}^0=x_i$.
+    where the $\delta_{i}^L=err_i$, as in Eq. \ref{eq:bp_shallow} and $y_{i}^0=x_i$.
     % 
     This update rule is ubiquitous in deep learning \cite{Rumelhart_etal88_paradist} and known as the gradient backpropagation algorithm.   
     Learning is typically carried out in forward passes (evaluation of the neural network activities) and backward passes (evaluation of $\delta$s).
+    
+    The same rule can be applied to \Glspl{rnn}. 
+    In this case the recurrence is ``unrolled'' meaning that an auxiliary network is created by making copies of the network for each time step (see Figure \ref{fig:snn_computational_graph}).
+    
+%    An important property of the unrolled network is that the parameters are shared across the time axis.
+    The unrolled network is simply a deep network with shared feedforward weights $W^l$ and recurrent weights $V^l$, on which the standard \Gls{bp} applies:
+    %
+    \begin{equation}\label{eq:bptt}
+      \begin{split}
+        \Delta {W_{ij}^{l}} &\propto \frac{\mathrm{\partial}}{\mathrm{\partial} W^{l}_{ij}} \mathcal{L}[t]  = \sum_{s=0}^t \delta_{i}^{l}[s]  y^{l}_j[s],\text{ and }\Delta {V_{ij}^{l}} \propto \frac{\mathrm{\partial}}{\mathrm{\partial} V^{l}_{ij}} \mathcal{L}[t]  = \sum_{s=1}^t \delta_{i}^{l}[s]  y^{l}_j[s-1]\\
+        \delta_{i}^{l} [t] & = \rho'\left( a_i^l[t] \right) \left( \sum_k \delta_{k}^{l+1}[t] W_{ki}^{l} + \sum_k \delta_{k}^{l}[t+1] V_{ki}^{l} \right),
+      \end{split}
+    \end{equation}
+    %
+    Applying backpropagation on such an ``unrolled'' network is referred to as \gls{bptt}.
   \end{mdframed}
 \end{infobox}
 
@@ -358,17 +415,17 @@ In the following, we describe examples of both type of solutions.
 \subsection{Temporal Credit Assignment (Emre)}
 \label{sec:temporal_credit_assignment}
 
-When training \glspl{rnn}, we do not only require a solution to the spatial credit assignment problem, but we also have to worry about temporal dimension of the network activity. Thus we also have to solve a temporal credit assignment problem.
+When training \glspl{rnn}, we do not only require a solution to the spatial credit assignment problem, but we also have to worry about temporal dimension of the network activity.
+Thus we have to solve a temporal credit assignment problem.
 Fortunately, both spatial and temporal credit assignment are related and we apply the same strategies by ``unrolling'' the network in time.
-The recurrent neural network is ``unrolled'' meaning that an auxiliary network is created by making copies of the network for each time step (see Figure \ref{fig:snn_computational_graph}).
-Applying backpropagation on such an ``unrolled'' network is referred to as \gls{bptt}.
 
-When training \glsplw{rnn} the unrolled network can become ``deep'' quickly as the number of required timesteps is large. This temporal depth is accompanied with increased memory requirements which can quickly become prohibitive, especially when considering neuromorphic applications where memory is often scarce.
+When training \glspl{rnn} the unrolled network can become ``deep'' quickly if the number of required timesteps is large. 
+This temporal depth is accompanied with increased memory requirements which can quickly become prohibitive, especially when considering neuromorphic applications where memory is often scarce.
 
 In some situations it can thus be beneficial to propagate all necessary information for gradient computation forward in time \cite{Williams_Zipser89_learalgo} (Fig. \ref{fig:backwrd_vs_forward_prop}).
 %Some form of memory is required to solve the temporal credit assignment problem in \glspl{rnn}. 
 In the following we briefly review the main differences between the two methods.
-For illustration purposes here, we assume a neural network with $L$ layers and a cost function $\mathcal{L}[t] = \sum_i (U^{L}_i[t]-\hat{U^{L}_i}[t])^2$. 
+%For illustration purposes here, we assume a neural network with $L$ layers and a cost function $\mathcal{L}[t] = \sum_i (U^{L}_i[t]-\hat{U^{L}_i}[t])^2$. 
 %
 \begin{figure}[htbp]
     \centering
@@ -381,57 +438,41 @@ For illustration purposes here, we assume a neural network with $L$ layers and a
 %
 \begin{enumerate}
 \item The ``backward'' method:  
-The unrolling of the network clarifies the flow of information in the inference and training stages (\reffig{fig:backwrd_vs_forward_prop}).
-An important property of the unrolled network is that the parameters are shared across the time axis.
-    Thus, the unrolled network is simply a deep network with shared weights on which one can apply the standard \Gls{bp} applies:
-%
-\begin{equation}\label{eq:bp_deep}
-  \begin{split}
-    \Delta {W_{ij}^{(l,l)}} &\propto \frac{\mathrm{\partial}}{\mathrm{\partial} W^{(l,l)}_{ij}} \mathcal{L}[T]  = \sum_{t=0}^T \delta_{i}^{l}[t]  S^{l-1}_j[t],\\
-    \delta_{i}^{l} [t] & = \rho'\left( U_i^l [t] \right) \left( \sum_k \delta_{k}^{l+1}[t] W_{ki}^{(l,l+1)} + \sum_k \delta_{k}^{l}[t+1] W_{ki}^{(l,l)} \right),
-  \end{split}
-\end{equation}
-%
-where $T$ is the duration of the sequence, and using the notation $\delta^{L}_i[t] = U_i^L[t]-\hat{U}_i^L[t]$
-This rule is known as \gls{bptt}, and the main difference compared to \gls{bp} is the sum over time steps $t$.
+%The unrolling of the network clarifies the flow of information in the inference and training stages \reffig{fig:backwrd_vs_forward_prop}.
 \gls{bptt} solves the temporal credit assignment problem by back propagating through the unrolled network.
 This method works backward through time after completing a forward update.
-In practice this is an expensive operation, as the entire history of activation must be buffered to computed the gradients.
-The use of standard backpropagation on the unrolled network directly enables the use of autodifferentiation tools offered in model machine learning toolkits~\cite{Bellec_etal18_longshor,Shrestha_Orchard18_slayspik,Wozniak_etal18_deepnetw}.\\
+In practice this is an expensive operation, as the entire history of states and inputs must be buffered to computed the gradients.
+The use of standard backpropagation on the unrolled network directly enables the use of autodifferentiation tools offered in modern machine learning toolkits~\cite{Bellec_etal18_longshor,Shrestha_Orchard18_slayspik,Wozniak_etal18_deepnetw}.\\
 \item The forward method: The information required for computing the errors is propagated forward.
 %Use Williams and Zipser equations, and explain special case where the ODE has a solution = superspike
-  For a \gls{lif} neuron with first order dynamics, recall that the discrete-time membrane potential and synaptic current can be expressed as Eqs.~\eqref{eq:syn_discrete_time} and \eqref{eq:mem_discrete_time}.
+%For a \gls{lif} neuron with first order dynamics, recall that the discrete-time membrane potential and synaptic current is expressed as Eqs.~\eqref{eq:syn_discrete_time} and \eqref{eq:mem_discrete_time}.
 %\[
 %\begin{split}
 %U_i[t+1] & = \beta U_i[t] + I_i[t]\\
 %  I_i[t+1] & = \alpha I_i[t] + \sum_j W_{ij} \sigma(U_j[t])
 %\end{split}
 %\]
-The gradient of a cost function $\mathcal{L}[t]$ with respect to weight $W_{ij}$ is then:
+The gradient of a cost function $\mathcal{L}[t]$ with respect to feed-forward weight $W_{ij}^l$ is obtained by taking the gradient of the \Gls{rnn} step:
 \[
 \begin{split} \label{eq:forward_mode_differentiation}
- \Delta {W_{ij}} &\propto \frac{\partial }{\partial W_{ij}} \mathcal{L}[t+1] = \delta_i[t+1] P_{ij}[t+1]\\
- P_{ij}[t+1]     &= \frac{\partial} {\partial W_{ij}}  U_i[t+1] = \beta P_{ij}[t] + Q_{ij}[t] + \sum_j W_{ij} \sigma'(U_j[t-1]) P_{ij}[t-1]\\
- Q_{ij}[t+1]     &= \frac{\partial} {\partial W_{ij}}  I_i[t+1] = \alpha Q_{ij}[t] + \sigma(U_i[t]) + \sum_j W_{ij} \sigma'(U_j[t-1]) P_{ij}[t-1],
+ \Delta {W_{ij}^l} &\propto \Dp{W_{ij}}\mathcal{L}[t]  = \delta_i^l[t] P_{ij}^l[t]\\
+ P_{ij}^l[t]     &= \frac{\partial} {\partial W_{ij}^l}  y_i^l[t] = P_{ij}^l[t-1] + \sum_j W_{ij}^l \Dp[{y_i^l[t-1]}]{{a_i^l[t-1]}} P_{ij}^l[t-1]\\
+ %Q_{ij}[t+1]     &= \frac{\partial} {\partial W_{ij}}  I_i[t+1] = \alpha Q_{ij}[t] + \sigma(U_i[t]) + \sum_j W_{ij} \sigma'(U_j[t-1]) P_{ij}[t-1],
 \end{split}
 \]
-Here, we replaced the spiking variable $S_j$ with the smooth activation function $\sigma(U_j[t])$.
-
-where $\sigma'$ is the derivative of $\sigma$.
+where the $\delta^l$ are local errors computed similarly to \Gls{bp}. 
+Gradients with respect to recurrent weights $V_{ij}^l$ are computed in a similar fashion.
 \end{enumerate}
 
-
 %Asymptotic Complexity Analysisconclusion(incomplete)
-In conclusion, both solutions transform the temporal credit assignment problem to a spatial one and then apply the same strategy as for spatial credit assignment (cf.\ \refsec{sec:spatial_CA}).
+Both solutions transform the temporal credit assignment problem to a spatial one and then apply the same strategy as for spatial credit assignment (cf.\ \refsec{sec:spatial_CA}).
 The backward approach is more efficient in terms of computation, but requires maintaining all the inputs and activations for each time step.
-Thus the space complexity of the backward approach is $O(N T)$, where $N$ is the number of neurons.\\
-On the other hand, the forward method requires maintaining variables $P_{ij}$ and $Q_{ij}$.
-The space complexity is $O(N^2)$, where $N$ is the number of neurons.
-In a single layer feed-forward architecture without refractory mechanisms, the third term above vanishes and $P_{ij}$, $Q_{ij}$ no longer depend on $j$.
-In this case, the space complexity becomes $O(N)$.
-This simplification can lead to an efficient synaptic plasticity rule for deep local learning, as described later.
-
-As memory is ample in modern von Neumann computers, the backward method is preferred for an implementation on a conventional computer.
+Thus the space complexity of the backward approach is $O(N T)$, where $N$ is the number of neurons.
+On the other hand, the forward method requires maintaining variables $P_{ij}$, resulting in a space complexity is $O(N^2)$.
+%In a single layer feed-forward architecture without refractory mechanisms, the third term above vanishes and $P_{ij}$, $Q_{ij}$ no longer depend on $j$.
+%In this case, the space complexity becomes $O(N)$.
+%This simplification can lead to an efficient synaptic plasticity rule for deep local learning, as described later.
+As memory is ample in modern von Neumann computers, the backward method is the default choice when implemented on a conventional computer.
 On the other hand, processing in dedicated neuromorphic hardware and, more generally, non-von Neumann computers may not have immediate access to such large memory.
 In this case, the forward approach is preferable.
 Furthermore, the forward approach is appealing from a biological point of view, since the learning rule is consistent with synaptic plasticity in the brain and ``three-factor'' rules.
@@ -448,19 +489,18 @@ Furthermore, the forward approach is appealing from a biological point of view, 
 
 % Segue to spiking neuron case to describe problem of non-differability
 In summary, efficient algorithms exist to train train \glspl{rnn}.
-An important requirement for these algorithms to work, however, is that the involved networks are differentiable.
+An important requirement for these algorithms to work, however, is that the involved networks are differentiable, as both methods involve a term $\Dp{y_i^l}{a_i^l}$.
 Differentiability is one of the core difficulties we have to overcome to train a \gls{snn}.
 We will discuss the main challenges to successfully train \glspl{snn} in the following. 
 
 
 \subsection{Challenges for credit assignment with spiking neurons}
-
-Like in the case of \glspl{rnn}, training \glspl{snn} requires to efficiently solve spatial and temporal credit assignemnt. 
+Like in the case of \glspl{rnn}, training \glspl{snn} requires to efficiently solve spatial and temporal credit assignment. 
 Before the algorithms introduced above can be applied to \glspl{snn}, and to neuromorphic hardware specifically, two two key challenges need to be overcome.
 
 The first challenge, concerns the lack of differentiability of the spiking nonlinearity itself. 
-We can appreciated this fact by inspection of Equations~\eqref{eq:bp_deep} and~\eqref{eq:forward_mode_differentiation}.
-Both expressions contain the partial derivative $\rho^\prime$ of the activation function $\rho$ as a multiplicative factor.
+We can appreciated this fact by inspection of Equations~\eqref{eq:bptt} and~\eqref{eq:forward_mode_differentiation}.
+Both expressions contain the partial derivative $\rho' := \Dp{y_i^l}{a_i^l}$ as a multiplicative factor.
 For our spiking neuron, however, we have $\rho(U(t))=S(U(t))=\Theta(U(t)-\vartheta)$ (cf.\ Eq.~\eqref{eq:spike}) and thus 
 \begin{equation}
 \rho^\prime(U(t))=\frac{\partial \rho(U(t))}{\partial U(t)}=
@@ -476,8 +516,21 @@ It is worth noting, that the same issue occurs in binary neural networks and som
 
 The second challenge, mostly concerns the memory requirements of temporal and layer-wise error propagation.
 % TODO formulate precisely what the second problem is here 
----missing paragraph---
+Learning by gradient descent rule relies on the immediate availability of backpropagated errors represented with high-precision memory.
+In conventional computers, \Gls{bp} requires storage that is shared across connected nodes in the graph.
+This type of shared memory does not exist in the brain, as states and parameters are local to the neurons and synapses \refbox{box:nonlocal}.
+%In other words, to solve the credit assignment problem, errors need to be available at the right place and the right time. 
 
+Locality can be spatial or temporal, or both.
+To solve spatial non-locality, a special communication channel that transmits the errors to the relevant nodes must be provisioned \cite{Baldi_Sadowski16_theoloca}. 
+To solve temporal non-locality, some form of memory or eligiblity trace is required to maintain the history of the relevant states. 
+In \Gls{bptt}, this involves a buffer of all the past inputs and states.
+Non-localities, both temporal and spatial, are arguably the most challenging and constraining aspect of \Glspl{rnn} and \Glspl{snn} \cite{Neftci18_datapowe}. 
+%%Emre: Following can move to the discussion
+Although non-locality in a model of computation can be seen as a serious shortcoming, it enables a tremendous advantage compared to conventional computer: the ability to massively parallellize computations with carefully controlled (and potentially dynamic) interprocess communications. 
+Thus, solving the ability to learn and process using local information extends well beyond the neuroscientists' agenda: it can enable information processing systems that approach the reliability and energy-efficiency of the brain.
+In the following two sections, we describe solutions to the spatial and temporal credit assignment problems in spiking neural networks.
+%%Emre: Add something about vanishing gradients and necessity for buffer in BPTT and eligibility
 
 \section{Solutions to the credit assignment problem with spiking neurons}
 To overcome the challenge of the ``hard'' spiking nonlinearity limitation, several approaches have been devised to train \glspl{snn} with varying degrees of success. The most common approaches can be coarsely classified into the following categories: 
@@ -628,7 +681,7 @@ efficiency.
 % TODO @Hesham ?
 
 
-\section{Surrogate gradients (Friedemann)}
+\section{Surrogate gradients}
 \label{sec:surrogate_gradients}
 
 To overcome some of the difficulties which are associated with training \glspl{snn}, we now introduce the notion of \gls{sg} methods.
@@ -646,6 +699,8 @@ A set of works have used \gls{sg} to specifically overcome the challenge of the 
 In this works typically a standard algorithm such as \gls{bptt} is used with on minor modification: within the algorithm each occurrence of the partial derivative of the spiking nonlinearity is replaced by the derivative of a smooth function.
 Implementing these approaches is possible in most auto-differentiation-enabled machine learning libraries by minor extensions (e.g.\ Tensorflow and PyTorch).
 Because all other aspects of backpropagation remain unaffected, these algorithms typically do not change the non-locality of the update rules. 
+
+% TODO add Figure with different surrogate partials used
 
 One of the first uses of such a \gls{sg} is described in
 \citet{bohte_error-backpropagation_2011} where the partial derivative of a
@@ -708,7 +763,7 @@ While a standard computer remains the architecture of choice if classification a
 Multi-layer neural networks are hierarchical feature extractors.
 Through successive linear projections and point-wise non-linearities, neurons become tuned (respond most strongly) to particular spatio-temporal features in the input.
 While the best features are those that take into account the subsequent processing stages and which are learned to minimize the final error(as the features learned using backpropagation do), high-quality features can also be obtained by more local methods.
-The non-local component of the weight update equation (Eq.~\ref{eq:bp_deep}) is the error term $\delta_i^l[t]$.
+The non-local component of the weight update equation (Eq.~\eqref{eq:bp_deep}) is the error term $\delta_i^l[t]$.
 Instead of obtaining this error term through backpropagation, we require that it be generated using information local to the layer. 
 One way of achieving this is to define a layer-wise loss $E^l({\bf y}^l[t])$ and use this local loss to obtain the errors.
 In such a local learning setting, the weight update equation becomes:
@@ -754,7 +809,7 @@ This forces each layer to learn a set of features that are able to match the top
 \end{infobox}
 
 
-\subsubsection{SuperSpike} 
+\subsubsection{SuperSpike (Friedemann)} 
 % TODO write a section on SuperSpike
 % biologically plausible
 Finally, \citet{zenke_superspike:_2018} using yet another surrogate derivative in combination with a forward propagation to derive an biologically plausible online
@@ -773,8 +828,6 @@ learning rule to learn precisely timed spike train transformations.
 % \begin{comment}
 % Ideas for credit assignment classification:
 % 
-% (Figure: step-function sigmoid)
-% 
 % * temporal credit assignment
 %     *    back-prop-like, e.g. Bellec et al., SLAYER (Figure: flow of error information in time -- with the next point)
 %     *    forward in time (single hop), e.g. SuperSpike
@@ -787,21 +840,7 @@ learning rule to learn precisely timed spike train transformations.
 % \end{comment}
 
 
-In gradient-based learning, the parameter updates contain a term that relates to the local error or, more generally, the derivative of the loss.
-In a neural network, this term is affected by the computations downstream from the node containing the trained parameter.
-This relationship is caused by the necessity to assign credit to that node, but its target value is not provided.
-In conventional neural networks, this \emph{credit assignment problem} is solved by backpropagating the errors from the output layer using the chain rule (\emph{i.e.} the gradient BP rule).
-The gradient BP rule relies on the immediate availability of backpropagated errors represented with high-precision memory.
-In conventional computers, \Gls{bp} requires storage that is shared across connected nodes in the graph.
-This type of shared memory does not exist in the brain, as states and parameters are local to the neurons and synapses \refbox{box:nonlocal}.
-%In other words, to solve the credit assignment problem, errors need to be available at the right place and the right time. 
-Non-locality can be spatial or temporal, or both.
-To solve spatial non-locality, a special communication channel that transmits the errors to the relevant nodes must be provisioned \cite{Baldi_Sadowski16_theoloca}. 
-To solve temporal non-locality, some form of (working) memory is required to maintain the history of the relevant states. 
-Non-localities, both temporal and spatial, are arguably the most challenging and constraining aspect of spiking neural networks and synaptic plasticity \cite{Neftci18_datapowe}. 
-Although non-locality in a model of computation can be seen as a serious shortcoming, it enables a tremendous advantage compared to conventional computer: massively parallel computing with carefully controlled (and potentially dynamic) interprocess communication. 
-Thus, solving the ability to learn and process using local information extends well beyond the neuroscientists' agenda: it can enable information processing systems that approach the reliability and energy-efficiency of the brain.
-In the following two sections, we describe solutions to the spatial and temporal credit assignment problems in spiking neural networks.
+
 
 
 
