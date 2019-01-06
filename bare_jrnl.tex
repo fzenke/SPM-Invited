@@ -95,6 +95,8 @@ In so doing, it introduces surrogate gradient methods as a particularly flexible
 \begin{center}
   * Shorten the introduction
   * Describe brain/spiking before the theoretical discussion on Turing machines.
+  * Section V too long, breaks the flow. Move Alternative methods to box?
+  
 \end{center}
 
 \section{Introduction}
@@ -108,35 +110,35 @@ A plethora of signal processing problems are concerned with real-time pattern re
 % CITE review However, to deploy
 %\textbf{motivation and brain inspiration}
 \glspl{rnn} are a class of stateful neural networks whose internal state evolves either in continuous time or through discrete time steps.
-\begin{comment}
-  Emre: The Turing discussion is too detailed here. Make it briefer. Introduce brain-inspired/spiking earlier
-\end{comment}
-\glspl{rnn} are universal computing architectures that are able to reproduce the behavior of an arbitrary Turing machine~\cite{Siegelmann_Sontag95}.
-%% Following line can be deleted/moved.
-The {\it program} implemented by an \gls{rnn}, however, is described in a fundamentally different way from a conventional Turing machine.
-Instead of a state transition table or a sequence of instructions, the behavior of \gls{rnn} is implicitly defined by the network weights and the equations governing the behavior of each neuron in the network.
-While this implicit definition is harder to parse and understand than conventional programs, it makes it possible to learn by tuning the network weights.
-%
-Early on, Alan Turing recognized this potential of \glspl{rnn} in a prescient paper~\cite{Ince92} in which he described recurrent networks of logic gates where the connections between logic gates can be adapted to suit the task.
-Turing's paper was inspired by the most complex \glspl{rnn} known to us: biological brains.
+%\begin{comment}
+%  Emre: The Turing discussion is too detailed here. Make it briefer. Introduce brain-inspired/spiking earlier
+%\end{comment}
+%%Turing discussion, move to discussion?
+%\glspl{rnn} are universal computing architectures that are able to reproduce the behavior of an arbitrary Turing machine~\cite{Siegelmann_Sontag95}.
+%%% Following line can be deleted/moved.
+%The {\it program} implemented by an \gls{rnn}, however, is described in a fundamentally different way from a conventional Turing machine.
+%Instead of a state transition table or a sequence of instructions, the behavior of \gls{rnn} is implicitly defined by the network weights and the equations governing the behavior of each neuron in the network.
+%While this implicit definition is harder to parse and understand than conventional programs, it makes it possible to learn by tuning the network weights.
+%%
+%Early on, Alan Turing recognized this potential of \glspl{rnn} in a prescient paper~\cite{Ince92} in which he described recurrent networks of logic gates where the connections between logic gates can be adapted to suit the task.
+%Turing's paper was inspired by the most complex \glspl{rnn} known to us: biological brains.
 While \glspl{rnn} used for practical applications nowadays are different in many fundamental ways from biological networks, they both share the same general architecture and employ learning based on weight adjustment.
 %
-The interest in \glspl{rnn} as a brain-inspired methods stems from a growing body of work is establishing formal equivalences between recurrent neural networks, and a class of spiking neural networks that can be efficiently emulated in dedicated neuromorphic hardware \cite{Zenke_Ganguli17_supesupe,Wozniak_etal18_deepnetw,Neftci18_datapowe,Bellec_etal18_longshor}. 
-It is thus natural to draw inspiration from biological networks when desigining \glspl{rnn}, as the former were evolution's highly-optimized answer to the problem of sensory signal processing. 
+The interest in \glspl{rnn} as a brain-inspired methods stems from a growing body of work is establishing formal equivalences between recurrent neural networks and a class of \glspl{snn} that can be efficiently emulated in dedicated neuromorphic hardware \cite{zenke_superspike:_2018,Wozniak_etal18_deepnetw,Neftci18_datapowe,Bellec_etal18_longshor}. 
+It is thus natural to draw inspiration from biological networks for computing, as they were evolution's highly-optimized answer to the problem of sensory signal processing. 
 \begin{comment}
   Emre: Merge the description of the training challenges with implementation challenges 
+  Emre: Make the following discussoin more SNN-centric. What are the challenges of SNN
 \end{comment}
-With \glspl{rnn}, two key challenges need to be addressed. 
-First, before an \gls{rnn} can be used to predict outcomes on new data, it needs to be trained.
-Training is the optimization procedure in which the the parameters or weights of the \gls{rnn} are adjusted to approximate a specific function that the \gls{rnn} is to perform.
-Training \glspl{rnn} can be impeded by a variety of factors common for real world applications, e.g.\ noise and non-stationary of the data. 
+\Glspl{rnn} and \Glspl{snn} are often trained using an optimization procedure in which the the parameters or weights are adjusted to minimize some objective function.
+Training \Glspl{rnn} and \Glspl{snn} can be impeded by a variety of factors common for real world applications, e.g.\ noise and non-stationary of the data. 
 % Overcoming these limitations is an active field of research, many of which
 % have been reviewed in detail elsewhere CITE. % CITE find suitable review
-Second, as models grow larger and make their way into embedded and automotive applications, their power efficiency is of increasing importance \cite{boahen_neuromorphs_2017}. 
+As models grow larger and make their way into embedded and automotive applications, their power efficiency for both inference and training is of increasing importance \cite{boahen_neuromorphs_2017}. 
 To tackle the latter problem, simplified neural network applications have been devised which are amenable to be run natively on dedicated hardware, such as neuromorphic hardware and neural network accelerators.  
-For instance, one common approach are binary activation neural network implementations which can dispense with energetically costly floating-point multiplications. % CITE paper on binary embedded nets \Glspl{snn}
-These form a special subset of \glspl{rnn} with a binary activation functions and constitute an area of active study both due to their potential for power
-efficient computation and more fundamentally because \glspl{snn} are the dominant network model employed by the brain.
+For instance, one common approach are binary activation neural network implementations which can dispense with energetically costly floating-point multiplications. % CITE paper on binary embedded nets
+These form a special subset of \glspl{rnn} with a binary activation functions and constitute a common ground between \Glspl{rnn} and \Glspl{snn}. 
+%area of active study both due to their potential for power efficient computation and more fundamentally because \glspl{snn} are the dominant network model employed by the brain.
 
 A body of work has focused on training spiking neural networks without hidden units \cite{ponulak_supervised_2009, Gutig_Sompolinsky06_tempneur,
 florian_chronotron:_2012, mohemmed_span:_2012, memmesheimer_learning_2014, Anwani_Rajendran15_normappr}, \emph{i.e.}\ units which are neither directly connected to the input nor the output of the network.  
@@ -178,9 +180,7 @@ In this article we focus on these challenges and describe possible remedies by s
 In this section we provide a brief walk-through how to formally map a \gls{snn} to \gls{rnn} 
 which will provide the basis to training a spiking neural network with \glspl{sg}.
 To that end, we will first introduce the \gls{lif} neuron model
-with current-based synapses as 
-a standard neuron model which has wide use in computational neuroscience \cite{Gerstner_etal14_neurdyna}.
-
+with current-based synapses as a standard neuron model which has wide use in computational neuroscience \cite{Gerstner_etal14_neurdyna}. 
 Next, we will reformulate this model in discrete time and show its formal equivalence to a discrete time \gls{rnn} with binary activation function. 
 Formulating \glspl{snn} as \glspl{rnn} 
 allows us to directly transfer and apply existing methods to train \glspl{rnn} and will serve as the conceptional framework for the rest of this article. 
@@ -286,7 +286,7 @@ characterize the dynamics of a \gls{rnn}
 (Figure~\ref{fig:snn_computational_graph}).  Specifically, the cell state of
 neuron $i$ is characterized by the instantaneous synaptic currents $I_i$ and the
 membrane voltage $U_i$.  
-It is straight forward to evaluate these equations. Moreover, we can use
+It is straightforward to evaluate these equations. Moreover, we can use
 standard machine learning libraries with auto-differentiation capabilities to do so.
 % TODO perhaps add a figure of a spiking neuron here (FRIEDEMANN)
 
@@ -315,21 +315,18 @@ More precisely, consider two neurons, $u$ and $v$, connected through a weight $w
 
 % Segue to spiking neuron case to describe problem of non-differability
 Because of the structural similarly it seems only natural to assume that gradient-based learning can directly be applied to \glspl{snn} in the same way as this is done for vanilla \glspl{rnn}. 
-However, in the spiking neuron case several an important issue arises
+However, in the spiking neuron case several important issue arises
 with regard to their differentiabilty.
 To better understand this issue we now consider the case of single \gls{lif} neuron using the framework we introduced above.
 
 
-\section{Challenges of gradient-based learning with spiking neurons}
+\subsection{Challenges of gradient-based learning with spiking neurons}
 
 As we have learned in the previous sections, gradient-based training is used commonly to train \glspl{rnn}.  
 
 There are two key challenges to gradient-based learning in \gls{snn}.
 % under construction, fzenke
-Both challenges relate to 
-The first challenge concerns the lack of differentiability of the spiking architecture itself. 
-The second challenge 
-
+Both challenges relate to the first challenge concerns the lack of differentiability of the spiking architecture itself. 
 By inspection of Equations~\eqref{eq:bp_deep} and~\eqref{eq:forward_mode_differentiation} it is easy to appreciate the occurrence of the partial derivative $\rho^\prime$ of the neuronal activation function $\rho$.
 For our spiking neuron, however, we have $\rho(U(t))=S(U(t))=\Theta(U(t)-\vartheta)$ (cf.\ Eq.~\eqref{eq:spike}) and thus 
 \begin{equation}
@@ -363,7 +360,7 @@ We will first briefly review existing literature on common ``smoothing'' and \gl
 
 % Truly smooth models (smooth forward pass)
 The defining characteristic of smoothed \glspl{snn} is that their formulation ensures well-behaved gradients which are directly suitable for optimization.
-Smooth models can be further categorized into soft nonlinearity models, probabilistic models, for which gradients technically are only well defined, or models which either rely rely on rate-codes or
+Smooth models can be further categorized into soft nonlinearity models, probabilistic models, for which gradients technically are only well defined, or models which either rely on rate-codes or
 single-spike temporal codes.  
 
 
@@ -505,7 +502,7 @@ In doing so, \gls{sg} learning can be reduced to local three factor rules which 
 In the following we briefly review existing work relying on \gls{sg} methods before turning to a more in-depth treatment of the underlying principles and capabilities. 
 
 
-One of the first uses of this approach is described in
+One of the first uses of \gls{sg} is described in
 \citet{bohte_error-backpropagation_2011} where the partial derivative of a
 spiking neuron was approximated by the derivative of a \gls{relu}
 and similar path was taken to optimize binary neural networks
