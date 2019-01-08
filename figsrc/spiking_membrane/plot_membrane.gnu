@@ -34,7 +34,7 @@ set palette defined ( 0 '#7FC97F',\
 			  7 '#666666' )
 
 
-set term pdfcairo size 3.3,2.0
+set term pdfcairo size 2.6,2.0
 set out 'plot_membrane.pdf'
 
 
@@ -66,10 +66,12 @@ set ytics out nomirror
 set ytics ("0" -60e-3, "1" -50e-3)
 set yrange [-60e-3:-50e-3]
 set ylabel 'U (a.u.)'
-plot 'out.0.mem' using 1:2 with lines title '',\
+plot 'out.0.mem' using 1:2 with lines lw 2 title '',\
 	 -50e-3 with lines dt 2 lc -1
 
 unset ylabel
+
+
 
 # plot 3
 set tmargin screen 0.40

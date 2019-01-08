@@ -15,15 +15,22 @@ CFLAGS=-ansi -pipe -O3 -march=native -ffast-math -pedantic -I/usr/include -I$(AU
 LDFLAGS=$(AURYNLIB)/libauryn.a -lboost_filesystem -lboost_system -lboost_program_options -lboost_mpi -lboost_serialization 
 SIMFILES=sim_cuba_lif
 
-.SECONDARY:
+# .SECONDARY:
 
-plots: plot_membrane.pdf
+
+figure.pdf: figure.tex plot_membrane.pdf sketch.pdf
+	pdflatex $<
+	
 
 plot_membrane.pdf: plot_membrane.gnu output.0.ras
 	gnuplot $<
 
 output.0.ras: sim_cuba_lif
 	./sim_cuba_lif
+
+%.pdf: %.tex
+	pdflatex $<
+	pdfcrop $@ $@
 
 sim_%: sim_%.o $(OBJFILES) 
 	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $(subst .o,,$<)

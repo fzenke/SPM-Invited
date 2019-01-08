@@ -1,0 +1,32 @@
+\documentclass{standalone}
+
+\usepackage[latin1]{inputenc}
+\usepackage{tikz,graphicx}
+% \usepackage{sfmath}
+% \usetikzlibrary{shapes,arrows}
+\renewcommand\familydefault\sfdefault
+
+
+
+\begin{document}
+\pagestyle{empty}
+
+\definecolor{outputcolor}{HTML}{9400d3}
+    
+\begin{tikzpicture}[x=1in,y=1in]
+    \tikzstyle{every node}=[font=\large\bfseries]
+
+	\node at (0,0)  {(a)}; 
+	\node [anchor=north west] (panelA) at (0,-0.1) {
+		\includegraphics[width=1in]{sketch}
+	};
+
+
+	\node at (1.2,0)  {(b)}; 
+	\node [anchor=north west] (panelB) at (1,0) {
+		\includegraphics[scale=1.0]{plot_membrane}
+	};
+
+\end{tikzpicture}
+
+\end{document}

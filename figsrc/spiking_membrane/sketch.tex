@@ -1,0 +1,40 @@
+\documentclass{standalone}
+
+\usepackage[latin1]{inputenc}
+\usepackage{tikz,graphicx}
+\usepackage{sfmath}
+\usepackage{bbold}
+\usepackage{dsfont}
+\usetikzlibrary{shapes,arrows}
+\begin{document}
+\pagestyle{empty}
+
+\renewcommand{\familydefault}{\sfdefault}
+\definecolor{outputcolor}{HTML}{9400d3}
+
+
+% Define block styles
+\tikzstyle{neuron} = [circle, draw, minimum height=1.0em, ultra thick, 
+anchor=center]
+    
+\begin{tikzpicture}
+    \pgfmathsetmacro{\sep}{0.5}  
+
+	% Place nodes 
+	\foreach \t in {-2,...,1} {
+		\node [neuron] (x\t) at (\sep*\t+\sep/2,0) {};
+	}
+	\node [circle, minimum height=2.0em, fill=outputcolor] (out) at (0,2) {};
+
+
+    % Draw edges
+	\foreach \t in {-2,...,1} {
+    	\path [->, draw, thick] (x\t) -- (out);
+	}
+
+	\node [font=\sffamily] at (0,-0.6) {Input neurons};
+	\node [font=\sffamily] at (0,2.6) {Output neuron};
+
+\end{tikzpicture}
+
+\end{document}
