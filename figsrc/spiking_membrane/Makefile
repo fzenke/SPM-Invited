@@ -20,10 +20,12 @@ SIMFILES=sim_cuba_lif
 
 figure.pdf: figure.tex plot_membrane.pdf sketch.pdf
 	pdflatex $<
+	pdfcrop $@ $@
 	
 
 plot_membrane.pdf: plot_membrane.gnu output.0.ras
 	gnuplot $<
+	pdfcrop $@ $@
 
 output.0.ras: sim_cuba_lif
 	./sim_cuba_lif
